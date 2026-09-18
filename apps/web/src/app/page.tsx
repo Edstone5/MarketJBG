@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { ArrowRight, ShieldCheck, Smartphone, Sparkles } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
+import { Footer } from '@/components/Footer';
 import { SearchBar } from '@/components/SearchBar';
 import { CategoryChips } from '@/components/CategoryChips';
 import { ProductCard, type ProductoCatalogo } from '@/components/ProductCard';
@@ -97,6 +98,7 @@ export default async function HomePage() {
           )}
         </section>
       </main>
+      <Footer />
     </>
   );
 }

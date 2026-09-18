@@ -66,7 +66,10 @@ cp apps/web/.env.example apps/web/.env.local
 cp apps/mobile/.env.example apps/mobile/.env
 ```
 
-Completa ambos archivos con la URL y `anon key` de tu proyecto de Supabase.
+Completa ambos archivos con la URL y `anon key` de tu proyecto de Supabase. En
+`apps/web/.env.local` completa también `SUPABASE_SERVICE_ROLE_KEY` (Project Settings > API >
+`service_role`) — la usa únicamente el Route Handler `/api/cuenta` para procesar la
+eliminación de cuentas; nunca debe llevar el prefijo `NEXT_PUBLIC_` ni exponerse al cliente.
 
 ### 3. Levantar la web
 
@@ -91,7 +94,8 @@ Escanea el QR con la app **Expo Go**, o presiona `a` / `i` para emulador Android
 1. Importa este repositorio en [vercel.com](https://vercel.com).
 2. Root Directory: `apps/web`. Vercel detecta Next.js automáticamente.
 3. Agrega las variables de entorno (`NEXT_PUBLIC_SUPABASE_URL`,
-   `NEXT_PUBLIC_SUPABASE_ANON_KEY`) en el proyecto de Vercel.
+   `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_SITE_URL`) en el
+   proyecto de Vercel. Marca `SUPABASE_SERVICE_ROLE_KEY` como variable sensible/secreta.
 4. Cada push a `main` despliega a producción; cada PR obtiene una URL de preview.
 
 ### Móvil → EAS Build + tiendas
@@ -118,8 +122,40 @@ esto desde GitHub Actions (disparo manual, para no gastar créditos de build sin
   prueba cerrada con ~12 testers durante 14 días antes de publicar en producción — inicia
   ese trámite con anticipación.
 - Cuenta de **Apple Developer Program** (USD 99/año).
-- Una **política de privacidad** publicada en una URL pública (puedes alojarla como una
-  página más de `apps/web`).
+- La web desplegada en Vercel, para poder pegar sus URLs de política de privacidad y
+  eliminación de cuenta en Play Console / App Store Connect (ver siguiente sección).
+
+## Páginas legales (requeridas por las tiendas)
+
+La web incluye las páginas que Google Play y App Store exigen antes de aprobar una app que
+crea cuentas de usuario:
+
+| Página | URL | Para qué la piden |
+|---|---|---|
+| Política de Privacidad | `/privacidad` | Apple (campo obligatorio) y Google Play (Data safety form) |
+| Términos y Condiciones | `/terminos` | Buena práctica / referenciada desde la política de privacidad |
+| Eliminar mi cuenta | `/eliminar-cuenta` | Google Play exige una URL pública, accesible sin instalar la app, que explique cómo borrar la cuenta y los datos |
+
+**Antes de publicar:**
+
+1. Abre [`apps/web/src/app/(legal)/privacidad/page.tsx`](apps/web/src/app/(legal)/privacidad/page.tsx)
+   y [`.../terminos/page.tsx`](apps/web/src/app/(legal)/terminos/page.tsx) y resuelve la nota
+   en amarillo: define quién es el responsable legal del tratamiento de datos (¿el equipo del
+   taller, una asociación de estudiantes, la UNJBG?) y reemplaza los correos de contacto
+   placeholder (`privacidad@emprendeunjbg.com`, `soporte@emprendeunjbg.com`) por uno real que el
+   equipo revise.
+2. Pide que un asesor legal o la oficina competente de la UNJBG revise ambos documentos — el
+   texto actual es una plantilla funcional, no asesoría legal.
+3. En **Google Play Console > App content > Data safety**, declara los datos que se listan en
+   la sección "Qué datos recopilamos" de `/privacidad`, y pega la URL de `/eliminar-cuenta` en
+   el campo de solicitud de eliminación de datos.
+4. En **App Store Connect > App Privacy**, completa el cuestionario de privacidad con la misma
+   información y pega la URL de `/privacidad` en "Privacy Policy URL".
+
+La eliminación de cuenta es funcional de extremo a extremo: el botón en `/mi-cuenta` (web) y en
+la pestaña Perfil (móvil) llama a [`/api/cuenta`](apps/web/src/app/api/cuenta/route.ts), que
+verifica la sesión, borra los archivos del usuario en Storage y elimina el usuario en Supabase
+Auth (lo que en cascada borra su perfil, emprendimiento, productos y pagos).
 
 ## Scripts útiles
 

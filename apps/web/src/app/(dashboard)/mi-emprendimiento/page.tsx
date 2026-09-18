@@ -52,6 +52,12 @@ export default async function MiEmprendimientoPage() {
               </div>
               <div className="flex gap-2">
                 <Link
+                  href="/mi-cuenta"
+                  className="rounded-full border border-neutral-300 px-4 py-2 text-sm font-medium hover:border-primary-500"
+                >
+                  Mi cuenta
+                </Link>
+                <Link
                   href="/mi-emprendimiento/suscripcion"
                   className="rounded-full border border-neutral-300 px-4 py-2 text-sm font-medium hover:border-primary-500"
                 >

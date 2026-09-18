@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Navbar } from '@/components/Navbar';
+import { Footer } from '@/components/Footer';
 import { SearchBar } from '@/components/SearchBar';
 import { CategoryChips } from '@/components/CategoryChips';
 import { ProductCard, type ProductoCatalogo } from '@/components/ProductCard';
@@ -60,6 +61,7 @@ export default async function CatalogoPage({
           </p>
         )}
       </main>
+      <Footer />
     </>
   );
 }

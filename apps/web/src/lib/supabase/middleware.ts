@@ -2,7 +2,7 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 import type { Database } from '@emprende/db';
 
-const RUTAS_PROTEGIDAS = ['/mi-emprendimiento', '/admin'];
+const RUTAS_PROTEGIDAS = ['/mi-emprendimiento', '/mi-cuenta', '/admin'];
 
 /**
  * Refresca la sesión de Supabase en cada request y protege las rutas de
