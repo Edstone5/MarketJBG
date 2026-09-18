@@ -1,0 +1,57 @@
+@import 'tailwindcss';
+
+:root {
+  --background: #ffffff;
+  --foreground: #0f172a;
+
+  /* Paleta institucional (placeholder, ver packages/ui/src/theme.ts) */
+  --color-primary-50: #eef4ff;
+  --color-primary-100: #d9e6ff;
+  --color-primary-200: #b3ccff;
+  --color-primary-300: #80aaff;
+  --color-primary-400: #4d84ff;
+  --color-primary-500: #1a5cff;
+  --color-primary-600: #0041e0;
+  --color-primary-700: #0033ad;
+  --color-primary-800: #00247a;
+  --color-primary-900: #001a5c;
+
+  --color-accent-400: #ffb31a;
+  --color-accent-500: #e69500;
+  --color-accent-600: #b37400;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+
+  --color-primary-50: var(--color-primary-50);
+  --color-primary-100: var(--color-primary-100);
+  --color-primary-200: var(--color-primary-200);
+  --color-primary-300: var(--color-primary-300);
+  --color-primary-400: var(--color-primary-400);
+  --color-primary-500: var(--color-primary-500);
+  --color-primary-600: var(--color-primary-600);
+  --color-primary-700: var(--color-primary-700);
+  --color-primary-800: var(--color-primary-800);
+  --color-primary-900: var(--color-primary-900);
+
+  --color-accent-400: var(--color-accent-400);
+  --color-accent-500: var(--color-accent-500);
+  --color-accent-600: var(--color-accent-600);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0b1220;
+    --foreground: #e2e8f0;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}

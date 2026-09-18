@@ -1,0 +1,51 @@
+name: EAS Build & Submit (móvil)
+
+# Disparo manual a propósito: los builds de EAS consumen minutos/creditos
+# pagados y las subidas a las tiendas son difíciles de revertir. Actívalo
+# desde la pestaña "Actions" de GitHub cuando el equipo esté listo para
+# publicar una nueva versión.
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: 'Perfil de EAS build (ver apps/mobile/eas.json)'
+        required: true
+        default: 'preview'
+        type: choice
+        options: [development, preview, production]
+      submit:
+        description: 'Enviar automáticamente a las tiendas tras el build'
+        required: true
+        default: false
+        type: boolean
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Instalar dependencias
+        working-directory: .
+        run: pnpm install --frozen-lockfile
+
+      - name: Configurar EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: EAS Build
+        run: eas build --platform all --profile ${{ inputs.profile }} --non-interactive ${{ inputs.submit && '--auto-submit' || '' }}

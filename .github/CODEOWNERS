@@ -1,0 +1,20 @@
+# Reemplaza cada @usuario por el handle real de GitHub de cada integrante
+# (sección 1.5 del documento base: roles del equipo). Esto exige su revisión
+# en los PRs que toquen esa parte del código.
+
+# Por defecto, cualquiera del equipo puede revisar
+*                       @edsoncondemaita
+
+# Interfaz / UX
+/apps/web/src/components/  @equipo-ui
+/apps/mobile/components/   @equipo-ui
+/packages/ui/              @equipo-ui
+
+# Backend / datos
+/packages/db/              @equipo-servidor
+/supabase/                 @equipo-servidor
+/apps/web/src/lib/          @equipo-servidor
+
+# CI/CD e infraestructura
+/.github/                  @equipo-qa
+/turbo.json                @equipo-qa

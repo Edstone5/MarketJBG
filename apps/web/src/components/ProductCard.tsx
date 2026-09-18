@@ -1,0 +1,60 @@
+import Image from 'next/image';
+import Link from 'next/link';
+import { BadgeCheck } from 'lucide-react';
+
+export interface ProductoCatalogo {
+  id: string;
+  nombre: string;
+  precio: number;
+  imagenes: string[];
+  emprendimiento: {
+    id: string;
+    nombre: string;
+    logo_url: string | null;
+  } | null;
+}
+
+const formatoPEN = new Intl.NumberFormat('es-PE', {
+  style: 'currency',
+  currency: 'PEN',
+});
+
+export function ProductCard({ producto }: { producto: ProductoCatalogo }) {
+  const imagen = producto.imagenes[0];
+
+  return (
+    <Link
+      href={`/catalogo/${producto.id}`}
+      className="group flex flex-col overflow-hidden rounded-xl border border-neutral-200 bg-white transition-shadow hover:shadow-md"
+    >
+      <div className="relative aspect-square w-full overflow-hidden bg-neutral-100">
+        {imagen ? (
+          <Image
+            src={imagen}
+            alt={producto.nombre}
+            fill
+            sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
+          />
+        ) : (
+          <div className="flex h-full items-center justify-center text-sm text-neutral-400">
+            Sin foto
+          </div>
+        )}
+      </div>
+
+      <div className="flex flex-1 flex-col gap-1 p-3">
+        <p className="line-clamp-2 text-sm font-medium text-neutral-900">{producto.nombre}</p>
+        <p className="text-base font-semibold text-primary-700">
+          {formatoPEN.format(producto.precio)}
+        </p>
+        {producto.emprendimiento && (
+          <div className="mt-1 flex items-center gap-1 text-xs text-neutral-500">
+            <BadgeCheck className="h-3.5 w-3.5 text-primary-500" aria-hidden />
+            <span className="line-clamp-1">{producto.emprendimiento.nombre}</span>
+          </div>
+        )}
+      </div>
+    </Link>
+  );
+}
