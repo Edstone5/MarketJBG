@@ -1,9 +1,11 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { BadgeCheck } from 'lucide-react';
+import { BadgeCheck, Wrench } from 'lucide-react';
+import type { TipoProducto } from '@emprende/db';
 
 export interface ProductoCatalogo {
   id: string;
+  tipo: TipoProducto;
   nombre: string;
   precio: number;
   imagenes: string[];
@@ -21,6 +23,7 @@ const formatoPEN = new Intl.NumberFormat('es-PE', {
 
 export function ProductCard({ producto }: { producto: ProductoCatalogo }) {
   const imagen = producto.imagenes[0];
+  const esServicio = producto.tipo === 'servicio';
 
   return (
     <Link
@@ -37,9 +40,15 @@ export function ProductCard({ producto }: { producto: ProductoCatalogo }) {
             className="object-cover transition-transform duration-300 group-hover:scale-105"
           />
         ) : (
-          <div className="flex h-full items-center justify-center text-sm text-neutral-400">
-            Sin foto
+          <div className="flex h-full flex-col items-center justify-center gap-1 text-neutral-400">
+            {esServicio && <Wrench className="h-5 w-5" aria-hidden />}
+            <span className="text-sm">{esServicio ? 'Servicio' : 'Sin foto'}</span>
           </div>
+        )}
+        {esServicio && (
+          <span className="absolute left-2 top-2 rounded-full bg-white/90 px-2 py-0.5 text-[11px] font-medium text-primary-700">
+            Servicio
+          </span>
         )}
       </div>
 

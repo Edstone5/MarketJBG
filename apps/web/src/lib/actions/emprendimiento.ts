@@ -54,6 +54,7 @@ export async function crearProductoAction(
     typeof imagenesRaw === 'string' && imagenesRaw.length > 0 ? imagenesRaw.split(',') : [];
 
   const resultado = crearProductoSchema.safeParse({
+    tipo: formData.get('tipo'),
     nombre: formData.get('nombre'),
     descripcion: formData.get('descripcion'),
     precio: Number(formData.get('precio')),

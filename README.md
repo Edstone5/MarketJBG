@@ -169,11 +169,12 @@ Auth (lo que en cascada borra su perfil, emprendimiento, productos y pagos).
 
 ## Modelo de datos
 
-El esquema completo vive en [`supabase/migrations/0001_init.sql`](supabase/migrations/0001_init.sql).
-Entidades principales: `perfiles` (extiende `auth.users`), `emprendimientos`, `productos`,
-`categorias` y `pagos` (registro de suscripción + comprobante Yape, sección 2.7 del documento
-base del proyecto). Las políticas de seguridad por fila están en
-[`0002_rls.sql`](supabase/migrations/0002_rls.sql).
+El esquema completo vive en [`supabase/migrations/`](supabase/migrations) (numeradas, se aplican
+en orden). Entidades principales: `perfiles` (extiende `auth.users`), `emprendimientos`,
+`productos` — que incluye tanto bienes físicos como servicios (tutorías, diseño, impresiones...)
+distinguidos por la columna `tipo` — `categorias` y `pagos` (registro de suscripción +
+comprobante Yape, sección 2.7 del documento base del proyecto). Las políticas de seguridad por
+fila están en [`0002_rls.sql`](supabase/migrations/0002_rls.sql).
 
 ## Contribuir
 

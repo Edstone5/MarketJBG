@@ -21,7 +21,8 @@ pnpm dev:mobile
 - ✅ Autenticación (login / registro) con correo institucional
 - ✅ Creación de emprendimiento
 - ✅ Eliminar cuenta (pestaña Perfil) y enlaces a Política de Privacidad / Términos
-- 🚧 Publicación de productos con fotos desde el celular (existe en la web; falta portar
-  el flujo de subida de imágenes con `expo-image-picker`)
-- 🚧 Pantalla de suscripción / reporte de pago Yape (existe en la web)
+- ✅ Publicación de productos o servicios con fotos desde el celular (`expo-image-picker`)
+- ✅ Pantalla de suscripción / reporte de pago Yape, con historial de pagos
 - 🚧 Notificaciones push (aprobación de pago, nuevo mensaje)
+- 🚧 Editar o desactivar una publicación existente (hoy solo se puede crear; para
+  quitar del catálogo un producto agotado o desactivar la cuenta hay que usar la web)

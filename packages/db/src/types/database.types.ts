@@ -1,6 +1,6 @@
 /**
  * Tipos de la base de datos, escritos a mano para reflejar
- * supabase/migrations/0001_init.sql.
+ * supabase/migrations/*.sql (0001 a 0004).
  *
  * En cuanto el proyecto tenga una instancia real de Supabase, reemplaza
  * este archivo generándolo automáticamente con:
@@ -10,6 +10,7 @@
 export type Rol = 'consumidor' | 'emprendedor' | 'admin';
 export type EstadoEmprendimiento = 'activo' | 'pendiente' | 'vencido' | 'suspendido';
 export type EstadoPago = 'pendiente' | 'aprobado' | 'rechazado';
+export type TipoProducto = 'producto' | 'servicio';
 
 export interface Database {
   public: {
@@ -93,6 +94,7 @@ export interface Database {
         Row: {
           id: string;
           emprendimiento_id: string;
+          tipo: TipoProducto;
           nombre: string;
           descripcion: string;
           precio: number;
@@ -104,11 +106,12 @@ export interface Database {
         Insert: {
           id?: string;
           emprendimiento_id: string;
+          tipo?: TipoProducto;
           nombre: string;
           descripcion: string;
           precio: number;
           categoria_slug: string;
-          imagenes: string[];
+          imagenes?: string[];
           disponible?: boolean;
         };
         Update: Partial<Database['public']['Tables']['productos']['Insert']>;

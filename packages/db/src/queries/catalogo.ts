@@ -12,7 +12,7 @@ export async function listarProductosCatalogo(
   let query = supabase
     .from('productos')
     .select(
-      `id, nombre, descripcion, precio, categoria_slug, imagenes, disponible, creado_en,
+      `id, tipo, nombre, descripcion, precio, categoria_slug, imagenes, disponible, creado_en,
        emprendimiento:emprendimientos!inner (id, nombre, logo_url, estado)`,
     )
     .eq('disponible', true)
@@ -23,6 +23,9 @@ export async function listarProductosCatalogo(
   }
   if (filtro.categoriaSlug) {
     query = query.eq('categoria_slug', filtro.categoriaSlug);
+  }
+  if (filtro.tipo) {
+    query = query.eq('tipo', filtro.tipo);
   }
   if (typeof filtro.precioMin === 'number') {
     query = query.gte('precio', filtro.precioMin);

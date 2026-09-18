@@ -40,6 +40,7 @@ export async function crearProducto(
     .from('productos')
     .insert({
       emprendimiento_id: emprendimientoId,
+      tipo: input.tipo,
       nombre: input.nombre,
       descripcion: input.descripcion,
       precio: input.precio,

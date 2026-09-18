@@ -1,7 +1,7 @@
 'use client';
 
-import { useActionState } from 'react';
-import { CATEGORIAS } from '@emprende/core';
+import { useActionState, useState } from 'react';
+import { CATEGORIAS, TIPOS_PRODUCTO, ETIQUETAS_TIPO_PRODUCTO } from '@emprende/core';
 import { crearProductoAction } from '@/lib/actions/emprendimiento';
 import { ImageUploader } from '@/components/ImageUploader';
 import type { EstadoFormulario } from '@/lib/actions/auth';
@@ -11,12 +11,39 @@ const estadoInicial: EstadoFormulario = {};
 export function ProductoForm({ emprendimientoId }: { emprendimientoId: string }) {
   const accionConId = crearProductoAction.bind(null, emprendimientoId);
   const [estado, accion, enviando] = useActionState(accionConId, estadoInicial);
+  const [tipo, setTipo] = useState<(typeof TIPOS_PRODUCTO)[number]>('producto');
 
   return (
     <form action={accion} className="flex max-w-lg flex-col gap-4">
       <div className="flex flex-col gap-1">
+        <span className="text-sm font-medium text-neutral-700">¿Qué vas a publicar?</span>
+        <div className="flex gap-2">
+          {TIPOS_PRODUCTO.map((valor) => (
+            <label
+              key={valor}
+              className={`flex-1 cursor-pointer rounded-lg border px-3 py-2 text-center text-sm font-medium ${
+                tipo === valor
+                  ? 'border-primary-600 bg-primary-50 text-primary-700'
+                  : 'border-neutral-300 text-neutral-600'
+              }`}
+            >
+              <input
+                type="radio"
+                name="tipo"
+                value={valor}
+                checked={tipo === valor}
+                onChange={() => setTipo(valor)}
+                className="sr-only"
+              />
+              {ETIQUETAS_TIPO_PRODUCTO[valor]}
+            </label>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-1">
         <label htmlFor="nombre" className="text-sm font-medium text-neutral-700">
-          Nombre del producto
+          Nombre del {tipo === 'servicio' ? 'servicio' : 'producto'}
         </label>
         <input
           id="nombre"
@@ -79,7 +106,9 @@ export function ProductoForm({ emprendimientoId }: { emprendimientoId: string })
       </div>
 
       <div className="flex flex-col gap-1">
-        <span className="text-sm font-medium text-neutral-700">Fotos (hasta 6)</span>
+        <span className="text-sm font-medium text-neutral-700">
+          Fotos (opcional, hasta 6){tipo === 'servicio' && ' — por ejemplo, trabajos anteriores'}
+        </span>
         <ImageUploader bucket="productos" name="imagenes" multiple maxFiles={6} />
       </div>
 
@@ -90,7 +119,7 @@ export function ProductoForm({ emprendimientoId }: { emprendimientoId: string })
         disabled={enviando}
         className="rounded-full bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60"
       >
-        {enviando ? 'Publicando…' : 'Publicar producto'}
+        {enviando ? 'Publicando…' : `Publicar ${tipo === 'servicio' ? 'servicio' : 'producto'}`}
       </button>
     </form>
   );
