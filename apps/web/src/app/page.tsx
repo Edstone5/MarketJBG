@@ -43,7 +43,7 @@ export default async function HomePage() {
           </div>
           <Link
             href="/mi-emprendimiento"
-            className="inline-flex items-center gap-1.5 rounded-full bg-accent-500 px-5 py-2.5 text-sm font-semibold text-primary-950 hover:bg-accent-400"
+            className="inline-flex items-center gap-1.5 rounded-full bg-accent-500 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-accent-700/30 hover:bg-accent-400"
           >
             Publica tu emprendimiento
             <ArrowRight className="h-4 w-4" aria-hidden />
@@ -68,8 +68,10 @@ export default async function HomePage() {
               texto: 'Solo una micro-suscripción mensual validada por Yape.',
             },
           ].map(({ icon: Icon, titulo, texto }) => (
-            <div key={titulo} className="rounded-xl border border-neutral-200 bg-white p-5">
-              <Icon className="mb-2 h-6 w-6 text-primary-600" aria-hidden />
+            <div key={titulo} className="rounded-2xl border border-neutral-100 bg-white p-5 shadow-sm">
+              <span className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-primary-50 text-primary-600">
+                <Icon className="h-5 w-5" aria-hidden />
+              </span>
               <p className="font-semibold text-neutral-900">{titulo}</p>
               <p className="text-sm text-neutral-500">{texto}</p>
             </div>
@@ -91,7 +93,7 @@ export default async function HomePage() {
               ))}
             </div>
           ) : (
-            <p className="rounded-xl border border-dashed border-neutral-300 p-8 text-center text-sm text-neutral-500">
+            <p className="rounded-2xl border border-dashed border-neutral-300 p-8 text-center text-sm text-neutral-500">
               Todavía no hay productos publicados. Conecta el proyecto a Supabase (ver
               apps/web/.env.example) y sé el primer emprendimiento del catálogo.
             </p>

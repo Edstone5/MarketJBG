@@ -31,7 +31,7 @@ export function SearchBar({ initialQuery = '' }: { initialQuery?: string }) {
         value={query}
         onChange={(event) => setQuery(event.target.value)}
         placeholder="Busca productos, comida, servicios..."
-        className="w-full rounded-full border border-neutral-300 bg-white py-2.5 pl-10 pr-4 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100"
+        className="w-full rounded-full border border-transparent bg-white py-3 pl-10 pr-4 text-sm shadow-md outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100"
       />
     </form>
   );

@@ -42,7 +42,7 @@ export default async function ProductoPage({ params }: PageProps<'/catalogo/[pro
     <>
       <Navbar />
       <main className="mx-auto grid w-full max-w-5xl flex-1 grid-cols-1 gap-8 px-4 py-8 md:grid-cols-2">
-        <div className="relative aspect-square overflow-hidden rounded-xl bg-neutral-100">
+        <div className="relative aspect-square overflow-hidden rounded-2xl bg-neutral-100 shadow-sm">
           {producto.imagenes[0] ? (
             <Image
               src={producto.imagenes[0]}
@@ -61,7 +61,7 @@ export default async function ProductoPage({ params }: PageProps<'/catalogo/[pro
 
         <div className="flex flex-col gap-4">
           <h1 className="text-2xl font-bold text-neutral-900">{producto.nombre}</h1>
-          <p className="text-3xl font-bold text-primary-700">
+          <p className="inline-flex w-fit items-baseline rounded-full bg-accent-50 px-3 py-1 text-2xl font-bold text-accent-600">
             {formatoPEN.format(producto.precio)}
           </p>
           <p className="whitespace-pre-line text-neutral-600">{producto.descripcion}</p>
@@ -69,7 +69,7 @@ export default async function ProductoPage({ params }: PageProps<'/catalogo/[pro
           {emprendimiento && (
             <Link
               href={`/emprendimientos/${emprendimiento.id}`}
-              className="flex items-center gap-3 rounded-xl border border-neutral-200 p-3 hover:border-primary-400"
+              className="flex items-center gap-3 rounded-2xl border border-neutral-100 p-3 shadow-sm hover:border-primary-300"
             >
               <div className="relative h-10 w-10 overflow-hidden rounded-full bg-neutral-100">
                 {emprendimiento.logo_url && (

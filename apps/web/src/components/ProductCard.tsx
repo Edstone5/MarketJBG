@@ -28,7 +28,7 @@ export function ProductCard({ producto }: { producto: ProductoCatalogo }) {
   return (
     <Link
       href={`/catalogo/${producto.id}`}
-      className="group flex flex-col overflow-hidden rounded-xl border border-neutral-200 bg-white transition-shadow hover:shadow-md"
+      className="group flex flex-col overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg"
     >
       <div className="relative aspect-square w-full overflow-hidden bg-neutral-100">
         {imagen ? (
@@ -46,15 +46,15 @@ export function ProductCard({ producto }: { producto: ProductoCatalogo }) {
           </div>
         )}
         {esServicio && (
-          <span className="absolute left-2 top-2 rounded-full bg-white/90 px-2 py-0.5 text-[11px] font-medium text-primary-700">
+          <span className="absolute left-2 top-2 rounded-full bg-white/95 px-2 py-0.5 text-[11px] font-medium text-primary-700 shadow-sm">
             Servicio
           </span>
         )}
       </div>
 
-      <div className="flex flex-1 flex-col gap-1 p-3">
+      <div className="flex flex-1 flex-col gap-1.5 p-3.5">
         <p className="line-clamp-2 text-sm font-medium text-neutral-900">{producto.nombre}</p>
-        <p className="text-base font-semibold text-primary-700">
+        <p className="inline-flex w-fit items-baseline rounded-full bg-accent-50 px-2 py-0.5 text-base font-bold text-accent-600">
           {formatoPEN.format(producto.precio)}
         </p>
         {producto.emprendimiento && (

@@ -45,7 +45,7 @@ export default async function CatalogoPage({
         </div>
 
         {errorConexion ? (
-          <p className="rounded-xl border border-dashed border-neutral-300 p-8 text-center text-sm text-neutral-500">
+          <p className="rounded-2xl border border-dashed border-neutral-300 p-8 text-center text-sm text-neutral-500">
             No se pudo conectar con Supabase. Configura las variables de entorno en
             apps/web/.env.local (ver .env.example).
           </p>
@@ -56,7 +56,7 @@ export default async function CatalogoPage({
             ))}
           </div>
         ) : (
-          <p className="rounded-xl border border-dashed border-neutral-300 p-8 text-center text-sm text-neutral-500">
+          <p className="rounded-2xl border border-dashed border-neutral-300 p-8 text-center text-sm text-neutral-500">
             No encontramos productos con esos filtros.
           </p>
         )}

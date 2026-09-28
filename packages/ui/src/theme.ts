@@ -3,32 +3,33 @@
  * `apps/mobile` (tailwind.config.js + NativeWind). Un solo lugar para
  * ajustar la paleta institucional "basadrina" (sección 2.4 del doc. base).
  *
- * NOTA: estos valores de "primary" son un placeholder profesional
- * (azul institucional + acento dorado). Reemplázalos por los colores
+ * NOTA: violeta + coral inspirados en apps de delivery tipo PedidosYa
+ * (layout de categorías/tarjetas), pero con paleta propia para no
+ * confundirse con ninguna marca existente. Reemplázalos por los colores
  * oficiales de la UNJBG cuando el equipo de diseño los confirme.
  */
 export const colors = {
   primary: {
-    50: '#eef4ff',
-    100: '#d9e6ff',
-    200: '#b3ccff',
-    300: '#80aaff',
-    400: '#4d84ff',
-    500: '#1a5cff',
-    600: '#0041e0',
-    700: '#0033ad',
-    800: '#00247a',
-    900: '#001a5c',
+    50: '#f5f2ff',
+    100: '#ebe3ff',
+    200: '#d3c2ff',
+    300: '#b494ff',
+    400: '#9563ff',
+    500: '#7c3aed',
+    600: '#6624d1',
+    700: '#521cad',
+    800: '#3f1687',
+    900: '#2c0f61',
   },
   accent: {
-    50: '#fff9eb',
-    100: '#ffefc2',
-    200: '#ffdd85',
-    300: '#ffc947',
-    400: '#ffb31a',
-    500: '#e69500',
-    600: '#b37400',
-    700: '#805300',
+    50: '#fff4ed',
+    100: '#ffe4d1',
+    200: '#ffc7a3',
+    300: '#ffa16a',
+    400: '#ff7a33',
+    500: '#f9600d',
+    600: '#d44a04',
+    700: '#a83a03',
   },
   success: '#16a34a',
   warning: '#d97706',
