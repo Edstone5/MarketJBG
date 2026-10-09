@@ -1,20 +1,9 @@
-# Reemplaza cada @usuario por el handle real de GitHub de cada integrante
-# (sección 1.5 del documento base: roles del equipo). Esto exige su revisión
-# en los PRs que toquen esa parte del código.
+# Propietarios del código: GitHub pide su revisión en los PRs que toquen esa parte.
+# Una cuenta personal no tiene equipos (@equipo-ui, etc.), así que por ahora solo figura la cuenta
+# propietaria del repositorio. Cuando Lisbeth y Fernanda acepten la invitación como colaboradoras,
+# añade líneas con sus usuarios reales, por ejemplo:
+#   /apps/web/src/components/  @usuario
+#   /packages/db/              @usuario
 
-# Por defecto, cualquiera del equipo puede revisar
-*                       @edsoncondemaita
-
-# Interfaz / UX
-/apps/web/src/components/  @equipo-ui
-/apps/mobile/components/   @equipo-ui
-/packages/ui/              @equipo-ui
-
-# Backend / datos
-/packages/db/              @equipo-servidor
-/supabase/                 @equipo-servidor
-/apps/web/src/lib/          @equipo-servidor
-
-# CI/CD e infraestructura
-/.github/                  @equipo-qa
-/turbo.json                @equipo-qa
+# Por defecto
+*  @Edstone5
