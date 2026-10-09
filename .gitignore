@@ -62,3 +62,6 @@ Thumbs.db
 
 # Herramientas locales de Claude Code (config del dev server, worktrees): no van al repo
 .claude/
+
+# Notas internas del equipo (pendientes, decisiones, checkpoint): solo en local, no van al repositorio
+Pendientes/
