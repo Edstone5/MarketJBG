@@ -65,3 +65,6 @@ Thumbs.db
 
 # Notas internas del equipo (pendientes, decisiones, checkpoint): solo en local, no van al repositorio
 Pendientes/
+
+# Carpeta temporal de packages/core/tests
+packages/core/.test-build/

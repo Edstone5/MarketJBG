@@ -1,6 +1,6 @@
 /**
  * Tipos de la base de datos, escritos a mano para reflejar
- * supabase/migrations/*.sql (0001 a 0004).
+ * supabase/migrations/*.sql (0001 a 0005).
  *
  * En cuanto el proyecto tenga una instancia real de Supabase, reemplaza
  * este archivo generándolo automáticamente con:
@@ -9,13 +9,19 @@
  */
 export type Rol = 'consumidor' | 'emprendedor' | 'admin';
 export type EstadoEmprendimiento = 'activo' | 'pendiente' | 'vencido' | 'suspendido';
-export type EstadoPago = 'pendiente' | 'aprobado' | 'rechazado';
+export type EstadoPago = 'pendiente' | 'validado';
 export type TipoProducto = 'producto' | 'servicio';
 
 export interface Database {
   public: {
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      /** Valida un pago pendiente y activa el emprendimiento un mes (solo administradores). */
+      validar_pago: {
+        Args: { p_pago_id: string };
+        Returns: Database['public']['Tables']['pagos']['Row'];
+      };
+    };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
     Tables: {
@@ -59,6 +65,8 @@ export interface Database {
           whatsapp: string;
           estado: EstadoEmprendimiento;
           vistas: number;
+          /** Fin de la suscripción vigente; sin ella (o vencida) el negocio no es público. */
+          activo_hasta: string | null;
           creado_en: string;
         };
         Insert: {
@@ -71,6 +79,7 @@ export interface Database {
           whatsapp: string;
           estado?: EstadoEmprendimiento;
           vistas?: number;
+          activo_hasta?: string | null;
         };
         Update: Partial<Database['public']['Tables']['emprendimientos']['Insert']>;
         Relationships: [
@@ -144,7 +153,6 @@ export interface Database {
           periodo_fin: string | null;
           revisado_por: string | null;
           revisado_en: string | null;
-          motivo_rechazo: string | null;
           creado_en: string;
         };
         Insert: {

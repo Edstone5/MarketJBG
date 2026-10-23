@@ -4,7 +4,7 @@ import { ESTADOS_PAGO, METODOS_PAGO } from '../constants/suscripcion';
 /**
  * Registro de pago de la micro-suscripción (Transacción + Comprobante del
  * doc. base, unificados: cada pago referencia un único comprobante subido
- * por el emprendedor y queda pendiente hasta la revisión manual del admin).
+ * por el emprendedor y queda 'pendiente' hasta que un administrador lo valida).
  */
 export const pagoSchema = z.object({
   id: z.string().uuid(),
@@ -13,13 +13,12 @@ export const pagoSchema = z.object({
   montoReportado: z.number().positive(),
   // Ruta dentro del bucket privado `comprobantes` (no una URL pública: el
   // bucket exige URLs firmadas y de corta duración para su lectura).
-  comprobanteUrl: z.string().min(3),
+  comprobanteUrl: z.string().min(3, 'Sube la captura del comprobante de Yape.'),
   estado: z.enum(ESTADOS_PAGO).default('pendiente'),
   periodoInicio: z.string().datetime().nullable().optional(),
   periodoFin: z.string().datetime().nullable().optional(),
   revisadoPor: z.string().uuid().nullable().optional(),
   revisadoEn: z.string().datetime().nullable().optional(),
-  motivoRechazo: z.string().max(300).nullable().optional(),
   creadoEn: z.string().datetime().optional(),
 });
 
@@ -33,11 +32,9 @@ export const reportarPagoSchema = pagoSchema.pick({
 
 export type ReportarPagoInput = z.infer<typeof reportarPagoSchema>;
 
-/** Acción del administrador al revisar un comprobante. */
-export const revisarPagoSchema = z.object({
+/** Acción del administrador: validar el comprobante de un pago pendiente. */
+export const validarPagoSchema = z.object({
   pagoId: z.string().uuid(),
-  aprobar: z.boolean(),
-  motivoRechazo: z.string().max(300).optional(),
 });
 
-export type RevisarPagoInput = z.infer<typeof revisarPagoSchema>;
+export type ValidarPagoInput = z.infer<typeof validarPagoSchema>;

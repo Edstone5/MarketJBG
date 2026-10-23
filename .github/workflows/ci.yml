@@ -22,7 +22,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: pnpm
 
       - name: Instalar dependencias
@@ -34,9 +34,28 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
+      # Carga todas las migraciones de supabase/migrations en un Postgres en memoria
+      # y comprueba las políticas de seguridad (quién puede leer o cambiar qué).
+      - name: Pruebas de seguridad de la base de datos
+        run: pnpm test
+
       - name: Build (web)
         run: pnpm --filter web build
         env:
           NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
           NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
           SUPABASE_SERVICE_ROLE_KEY: placeholder-service-key
+
+      # Comprueba que la app móvil empaqueta (Metro). No genera instaladores.
+      - name: Empaquetar app móvil (Android)
+        run: pnpm --filter mobile exec expo export --platform android --output-dir "$RUNNER_TEMP/mobile-export"
+        env:
+          CI: '1'
+          EXPO_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
+
+      # Informativo: avisa de vulnerabilidades conocidas sin bloquear el PR
+      # (algunas vienen de dependencias de Expo que aún no tienen parche).
+      - name: Auditoría de dependencias
+        run: pnpm audit --prod
+        continue-on-error: true

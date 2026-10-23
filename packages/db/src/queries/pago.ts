@@ -1,4 +1,4 @@
-import type { ReportarPagoInput } from '@emprende/core';
+import { ErrorDeUsuario, MAX_PAGOS_PENDIENTES, type ReportarPagoInput } from '@emprende/core';
 import type { TypedSupabaseClient } from '../client';
 
 export async function reportarPago(
@@ -6,6 +6,19 @@ export async function reportarPago(
   emprendimientoId: string,
   input: ReportarPagoInput,
 ) {
+  // La base de datos también lo exige; se comprueba antes para dar un mensaje claro.
+  const { count, error: conteoError } = await supabase
+    .from('pagos')
+    .select('id', { count: 'exact', head: true })
+    .eq('emprendimiento_id', emprendimientoId)
+    .eq('estado', 'pendiente');
+  if (conteoError) throw conteoError;
+  if ((count ?? 0) >= MAX_PAGOS_PENDIENTES) {
+    throw new ErrorDeUsuario(
+      `Ya tienes ${MAX_PAGOS_PENDIENTES} pagos esperando revisión. Espera a que un administrador los valide.`,
+    );
+  }
+
   const { data, error } = await supabase
     .from('pagos')
     .insert({
@@ -19,7 +32,7 @@ export async function reportarPago(
   return data;
 }
 
-/** Panel de administración: pagos pendientes de revisión (sección 2.7 / 2.8). */
+/** Panel de administración: pagos pendientes de validación (sección 2.7 / 2.8). */
 export async function listarPagosPendientes(supabase: TypedSupabaseClient) {
   const { data, error } = await supabase
     .from('pagos')
@@ -30,37 +43,13 @@ export async function listarPagosPendientes(supabase: TypedSupabaseClient) {
   return data;
 }
 
-export async function revisarPago(
-  supabase: TypedSupabaseClient,
-  pagoId: string,
-  adminId: string,
-  aprobar: boolean,
-  motivoRechazo?: string,
-) {
-  const { data: pago, error: pagoError } = await supabase
-    .from('pagos')
-    .update({
-      estado: aprobar ? 'aprobado' : 'rechazado',
-      revisado_por: adminId,
-      revisado_en: new Date().toISOString(),
-      motivo_rechazo: aprobar ? null : (motivoRechazo ?? null),
-    })
-    .eq('id', pagoId)
-    .select()
-    .single();
-  if (pagoError) throw pagoError;
-
-  if (aprobar) {
-    const ahora = new Date();
-    const finPeriodo = new Date(ahora);
-    finPeriodo.setMonth(finPeriodo.getMonth() + 1);
-
-    const { error: empError } = await supabase
-      .from('emprendimientos')
-      .update({ estado: 'activo' })
-      .eq('id', pago.emprendimiento_id);
-    if (empError) throw empError;
-  }
-
-  return pago;
+/**
+ * El administrador valida el comprobante. La función `validar_pago` de la base
+ * de datos hace todo en una sola transacción: marca el pago como 'validado',
+ * activa el emprendimiento y le da un mes más de vigencia (ver 0005).
+ */
+export async function validarPago(supabase: TypedSupabaseClient, pagoId: string) {
+  const { data, error } = await supabase.rpc('validar_pago', { p_pago_id: pagoId });
+  if (error) throw error;
+  return data;
 }

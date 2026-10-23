@@ -2,8 +2,17 @@ import type { FiltroCatalogo } from '@emprende/core';
 import type { TypedSupabaseClient } from '../client';
 
 /**
- * Lista productos disponibles del catálogo público (solo de emprendimientos
- * con estado 'activo', reforzado además por las políticas RLS).
+ * Escapa los comodines de LIKE (% y _) para que la búsqueda trate lo que
+ * escribe la persona como texto literal.
+ */
+function textoLiteral(texto: string) {
+  return texto.replace(/[\\%_]/g, '\\$&');
+}
+
+/**
+ * Lista productos disponibles del catálogo público: solo de emprendimientos
+ * 'activos' con suscripción vigente. Las políticas RLS (0005) aplican la misma
+ * regla, así que tampoco se puede saltar consultando la API directamente.
  */
 export async function listarProductosCatalogo(
   supabase: TypedSupabaseClient,
@@ -16,10 +25,11 @@ export async function listarProductosCatalogo(
        emprendimiento:emprendimientos!inner (id, nombre, logo_url, estado)`,
     )
     .eq('disponible', true)
-    .eq('emprendimiento.estado', 'activo');
+    .eq('emprendimiento.estado', 'activo')
+    .gt('emprendimiento.activo_hasta', new Date().toISOString());
 
   if (filtro.query) {
-    query = query.ilike('nombre', `%${filtro.query}%`);
+    query = query.ilike('nombre', `%${textoLiteral(filtro.query.slice(0, 120))}%`);
   }
   if (filtro.categoriaSlug) {
     query = query.eq('categoria_slug', filtro.categoriaSlug);

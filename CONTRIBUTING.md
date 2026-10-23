@@ -6,7 +6,7 @@
 2. Commits siguiendo [Conventional Commits](https://www.conventionalcommits.org/es/):
    `feat: agrega filtro de precio al catálogo`, `fix: corrige validación de whatsapp`.
 3. Abre un Pull Request hacia `main` usando la plantilla. Necesitas al menos 1 aprobación y
-   que el CI (`pnpm lint`, `pnpm typecheck`, build) pase en verde.
+   que el CI (`pnpm lint`, `pnpm typecheck`, `pnpm test`, build web y empaquetado móvil) pase en verde.
 4. Mergea con "Squash and merge" para mantener el historial de `main` limpio.
 
 No se trabaja directamente sobre `main`, y no se usan ramas de larga duración tipo
@@ -18,6 +18,7 @@ No se trabaja directamente sobre `main`, y no se usan ramas de larga duración t
 pnpm install
 pnpm lint
 pnpm typecheck
+pnpm test
 pnpm build
 ```
 
@@ -38,3 +39,7 @@ Todo cambio de esquema va en una migración nueva dentro de `supabase/migrations
 (numerada secuencialmente), nunca editando una migración ya mergeada a `main`. Si agregas
 una categoría nueva, actualiza también `packages/core/src/constants/categorias.ts` y
 `supabase/seed/seed.sql` en el mismo PR para que no se desincronicen.
+
+Si la migración toca políticas, disparadores o funciones, agrega el caso en
+`supabase/tests/politicas.test.mjs` (lo que debe quedar bloqueado y lo que debe seguir
+funcionando) y corre `pnpm test`.
