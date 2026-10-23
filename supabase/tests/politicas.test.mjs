@@ -450,6 +450,81 @@ describe('productos: fotos solo de nuestro almacenamiento y de la carpeta del du
   });
 });
 
+describe('productos: el dueño edita, oculta y borra los suyos', () => {
+  test('el dueño cambia los datos de su publicación', async () => {
+    const v = await crearVendedor();
+    const p = await publicarProducto(v);
+    const cambiado = await como('authenticated', v.id, (d) =>
+      uno(
+        d,
+        `update productos set nombre = 'Nombre nuevo', precio = 9.5, tipo = 'servicio', imagenes = '{}'
+          where id = $1 returning nombre, precio, tipo, imagenes`,
+        [p.id],
+      ),
+    );
+    assert.equal(cambiado.nombre, 'Nombre nuevo');
+    assert.equal(Number(cambiado.precio), 9.5);
+    assert.equal(cambiado.tipo, 'servicio');
+    assert.deepEqual(cambiado.imagenes, []);
+  });
+
+  test('al editar tampoco se admiten fotos ajenas ni de otros sitios', async () => {
+    const v = await crearVendedor();
+    const otro = await crearUsuario(correo('otro'));
+    const p = await publicarProducto(v);
+    for (const url of ['https://evil.example/x.png', urlFoto(otro)]) {
+      await assert.rejects(
+        como('authenticated', v.id, (d) => d.query('update productos set imagenes = $2 where id = $1', [p.id, [url]])),
+        /fotos deben subirse/,
+        url,
+      );
+    }
+  });
+
+  test('otra persona no edita, oculta ni borra publicaciones ajenas (no cambia ninguna fila)', async () => {
+    const v = await crearVendedor();
+    const intruso = await crearVendedor('intruso');
+    const p = await publicarProducto(v);
+    const editadas = await como('authenticated', intruso.id, (d) =>
+      filas(d, `update productos set nombre = 'Hackeado', disponible = false where id = $1 returning id`, [p.id]),
+    );
+    assert.equal(editadas.length, 0);
+    const borradas = await como('authenticated', intruso.id, (d) =>
+      filas(d, 'delete from productos where id = $1 returning id', [p.id]),
+    );
+    assert.equal(borradas.length, 0);
+    const intacto = await uno(db, 'select nombre, disponible from productos where id = $1', [p.id]);
+    assert.deepEqual(intacto, { nombre: 'Producto de prueba', disponible: true });
+  });
+
+  test('ocultar quita la publicación del catálogo y mostrarla la devuelve', async () => {
+    const admin = await crearUsuario(correo('admin'), { admin: true });
+    const v = await crearVendedor();
+    const p = await publicarProducto(v);
+    await activar(v, admin);
+    const visible = () => como('anon', null, (d) => filas(d, 'select id from productos where id = $1', [p.id]));
+    assert.equal((await visible()).length, 1);
+    await como('authenticated', v.id, (d) => d.query('update productos set disponible = false where id = $1', [p.id]));
+    assert.equal((await visible()).length, 0);
+    await como('authenticated', v.id, (d) => d.query('update productos set disponible = true where id = $1', [p.id]));
+    assert.equal((await visible()).length, 1);
+  });
+
+  test('el dueño borra su publicación y devuelve sus fotos; el administrador también puede borrar', async () => {
+    const admin = await crearUsuario(correo('admin'), { admin: true });
+    const v = await crearVendedor();
+    const p1 = await publicarProducto(v, 'Para borrar');
+    const p2 = await publicarProducto(v, 'Para que borre el admin');
+    const borrada = await como('authenticated', v.id, (d) =>
+      uno(d, 'delete from productos where id = $1 returning imagenes', [p1.id]),
+    );
+    assert.deepEqual(borrada.imagenes, [urlFoto(v.id)]);
+    const porAdmin = await como('authenticated', admin, (d) => filas(d, 'delete from productos where id = $1 returning id', [p2.id]));
+    assert.equal(porAdmin.length, 1);
+    assert.equal((await filas(db, 'select id from productos where emprendimiento_id = $1', [v.empId])).length, 0);
+  });
+});
+
 describe('storage', () => {
   test('cada usuario solo escribe en su carpeta y no lee comprobantes ajenos', async () => {
     const a = await crearUsuario(correo('a'));

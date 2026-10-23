@@ -126,4 +126,13 @@ describe('archivos', () => {
     assert.equal(core.esFotoDelUsuario(`${base}/otro/a.png`, 'productos', 'u-1'), false);
     assert.equal(core.esFotoDelUsuario('https://evil.example/a.png', 'productos', 'u-1'), false);
   });
+
+  test('rutaDeFoto: la ruta dentro del bucket, solo para fotos nuestras', () => {
+    const base = 'https://x.supabase.co/storage/v1/object/public/productos';
+    assert.equal(core.rutaDeFoto(`${base}/u-1/1700-foto.png`, 'productos'), 'u-1/1700-foto.png');
+    assert.equal(core.rutaDeFoto(`${base}/u-1/mi%20foto.png?t=1`, 'productos'), 'u-1/mi foto.png');
+    assert.equal(core.rutaDeFoto(`${base}/u-1/a.png`, 'logos'), null);
+    assert.equal(core.rutaDeFoto('https://evil.example/a.png', 'productos'), null);
+    assert.equal(core.rutaDeFoto(`${base}/../otro/a.png`, 'productos'), null);
+  });
 });

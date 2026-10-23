@@ -51,3 +51,15 @@ export function nombreArchivoSeguro(nombre: string, maxLargo = 60): string {
 export function esFotoDelUsuario(url: string, bucket: 'productos' | 'logos', usuarioId: string): boolean {
   return url.includes(`/storage/v1/object/public/${bucket}/${usuarioId}/`);
 }
+
+/**
+ * Ruta del archivo dentro del bucket (`<usuario>/<archivo>`) a partir de su URL pública, o null si la URL no es
+ * una foto de ese bucket. Sirve para borrar del almacenamiento las fotos que ya no usa un producto.
+ */
+export function rutaDeFoto(url: string, bucket: 'productos' | 'logos'): string | null {
+  const marca = `/storage/v1/object/public/${bucket}/`;
+  const i = url.indexOf(marca);
+  if (i < 0) return null;
+  const ruta = decodeURIComponent(url.slice(i + marca.length).split(/[?#]/)[0] ?? '');
+  return ruta && !ruta.includes('..') ? ruta : null;
+}

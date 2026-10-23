@@ -159,9 +159,10 @@ export default function PrivacidadPage() {
             tus datos cuando la ley lo permita.
           </p>
           <p>
-            Puedes eliminar tu cuenta y todos tus datos directamente desde la app (en «Mi cuenta»
-            de la web o en la pestaña «Perfil» de la app móvil). Para rectificar tus datos, o para
-            editar o retirar un producto o tu perfil comercial sin borrar la cuenta, escríbenos a{' '}
+            Puedes editar, ocultar o eliminar tus productos y servicios desde «Mi emprendimiento»
+            en la web o desde la pestaña «Vender» de la app móvil, y eliminar tu cuenta y todos tus
+            datos desde «Mi cuenta» de la web o la pestaña «Perfil» de la app móvil. Para rectificar
+            tus datos personales, o para cambiar tu perfil comercial sin borrar la cuenta, escríbenos a{' '}
             <a href={`mailto:${CORREO_CONTACTO}`} className="text-primary-700 underline">
               {CORREO_CONTACTO}
             </a>

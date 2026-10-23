@@ -3,8 +3,9 @@ import { redirect } from 'next/navigation';
 import { PlusCircle } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { EmprendimientoForm } from '@/components/EmprendimientoForm';
+import { ProductoAcciones } from '@/components/ProductoAcciones';
 import { createClient } from '@/lib/supabase/server';
-import { estadoEfectivo, formatearFecha } from '@emprende/core';
+import { estadoEfectivo, ETIQUETAS_TIPO_PRODUCTO, formatearFecha } from '@emprende/core';
 import { obtenerMiEmprendimiento } from '@emprende/db';
 
 const ETIQUETAS_ESTADO: Record<string, { texto: string; clase: string }> = {
@@ -108,11 +109,25 @@ export default async function MiEmprendimientoPage() {
             {emprendimiento.productos && emprendimiento.productos.length > 0 ? (
               <ul className="divide-y divide-neutral-200 rounded-xl border border-neutral-200">
                 {emprendimiento.productos.map((producto) => (
-                  <li key={producto.id} className="flex items-center justify-between p-3">
-                    <span className="text-sm font-medium text-neutral-900">
-                      {producto.nombre}
-                    </span>
-                    <span className="text-sm text-neutral-500">S/ {producto.precio}</span>
+                  <li
+                    key={producto.id}
+                    className="flex flex-wrap items-center justify-between gap-3 p-3"
+                  >
+                    <div>
+                      <span className="text-sm font-medium text-neutral-900">{producto.nombre}</span>
+                      <span className="ml-2 text-xs text-neutral-500">
+                        {ETIQUETAS_TIPO_PRODUCTO[producto.tipo]}
+                      </span>
+                      {!producto.disponible && (
+                        <span className="ml-2 rounded-full bg-neutral-200 px-2 py-0.5 text-xs font-medium text-neutral-700">
+                          Oculto
+                        </span>
+                      )}
+                      <p className="text-sm text-neutral-500">S/ {producto.precio}</p>
+                    </div>
+                    <ProductoAcciones
+                      producto={{ id: producto.id, nombre: producto.nombre, disponible: producto.disponible }}
+                    />
                   </li>
                 ))}
               </ul>

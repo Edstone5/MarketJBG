@@ -23,6 +23,10 @@ export default function RootLayout() {
           options={{ headerShown: true, title: 'Nueva publicación' }}
         />
         <Stack.Screen
+          name="negocio/productos/[id]"
+          options={{ headerShown: true, title: 'Editar publicación' }}
+        />
+        <Stack.Screen
           name="negocio/suscripcion"
           options={{ headerShown: true, title: 'Suscripción' }}
         />

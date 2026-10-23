@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { Alert, RefreshControl, SafeAreaView, ScrollView, Text, TextInput, View } from 'react-native';
+import { Alert, Pressable, RefreshControl, SafeAreaView, ScrollView, Text, TextInput, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import {
   CATEGORIAS,
@@ -10,7 +10,14 @@ import {
   mensajeError,
   primerError,
 } from '@emprende/core';
-import { crearEmprendimiento, obtenerMiEmprendimiento, type Database } from '@emprende/db';
+import {
+  alternarDisponibilidadProducto,
+  crearEmprendimiento,
+  eliminarFotosDeProducto,
+  eliminarProducto,
+  obtenerMiEmprendimiento,
+  type Database,
+} from '@emprende/db';
 import { PlusCircle } from 'lucide-react-native';
 import { supabase, supabaseConfigurado } from '@/lib/supabase';
 import { useAuth } from '@/providers/AuthProvider';
@@ -54,6 +61,36 @@ export default function VenderScreen() {
       cargar();
     }, [cargar]),
   );
+
+  type Publicacion = NonNullable<Emprendimiento['productos']>[number];
+
+  async function cambiarVisibilidad(producto: Publicacion) {
+    try {
+      await alternarDisponibilidadProducto(supabase, producto.id, !producto.disponible);
+      await cargar();
+    } catch (error) {
+      Alert.alert('No se pudo cambiar la visibilidad', mensajeError(error, 'Inténtalo de nuevo.'));
+    }
+  }
+
+  function confirmarEliminar(producto: Publicacion) {
+    Alert.alert('Eliminar publicación', `¿Eliminar «${producto.nombre}»? Esta acción no se puede deshacer.`, [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Eliminar',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            const fotos = await eliminarProducto(supabase, producto.id);
+            await eliminarFotosDeProducto(supabase, fotos);
+            await cargar();
+          } catch (error) {
+            Alert.alert('No se pudo eliminar', mensajeError(error, 'Inténtalo de nuevo.'));
+          }
+        },
+      },
+    ]);
+  }
 
   if (cargandoAuth) return null;
 
@@ -125,14 +162,39 @@ export default function VenderScreen() {
           {emprendimiento.productos && emprendimiento.productos.length > 0 ? (
             <View className="divide-y divide-neutral-200 rounded-xl border border-neutral-200 bg-white">
               {emprendimiento.productos.map((producto) => (
-                <View key={producto.id} className="flex-row items-center justify-between p-3">
-                  <View>
-                    <Text className="text-sm font-medium text-neutral-900">{producto.nombre}</Text>
-                    <Text className="text-xs text-neutral-500">
-                      {ETIQUETAS_TIPO_PRODUCTO[producto.tipo]}
-                    </Text>
+                <View key={producto.id} className="gap-2 p-3">
+                  <View className="flex-row items-center justify-between">
+                    <View className="flex-1 pr-2">
+                      <Text className="text-sm font-medium text-neutral-900">{producto.nombre}</Text>
+                      <Text className="text-xs text-neutral-500">
+                        {ETIQUETAS_TIPO_PRODUCTO[producto.tipo]}
+                        {!producto.disponible && ' · Oculto'}
+                      </Text>
+                    </View>
+                    <Text className="text-sm text-neutral-500">S/ {producto.precio}</Text>
                   </View>
-                  <Text className="text-sm text-neutral-500">S/ {producto.precio}</Text>
+                  <View className="flex-row gap-2">
+                    <Pressable
+                      onPress={() => router.push(`/negocio/productos/${producto.id}`)}
+                      className="rounded-full border border-neutral-300 px-3 py-1"
+                    >
+                      <Text className="text-xs font-medium text-neutral-700">Editar</Text>
+                    </Pressable>
+                    <Pressable
+                      onPress={() => cambiarVisibilidad(producto)}
+                      className="rounded-full border border-neutral-300 px-3 py-1"
+                    >
+                      <Text className="text-xs font-medium text-neutral-700">
+                        {producto.disponible ? 'Ocultar' : 'Mostrar'}
+                      </Text>
+                    </Pressable>
+                    <Pressable
+                      onPress={() => confirmarEliminar(producto)}
+                      className="rounded-full border border-red-200 px-3 py-1"
+                    >
+                      <Text className="text-xs font-medium text-red-700">Eliminar</Text>
+                    </Pressable>
+                  </View>
                 </View>
               ))}
             </View>

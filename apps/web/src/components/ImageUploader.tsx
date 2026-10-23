@@ -10,6 +10,13 @@ interface ImageUploaderProps {
   name: string;
   multiple?: boolean;
   maxFiles?: number;
+  /** Fotos que ya tiene lo que se está editando. */
+  initialUrls?: string[];
+  /**
+   * Si es `true` (por defecto), quitar una foto también borra el archivo. Al editar una publicación se pone en
+   * `false`: los archivos que ya no se usan se borran al guardar, para no dejar una foto rota si se cancela.
+   */
+  borrarAlQuitar?: boolean;
 }
 
 /**
@@ -19,8 +26,15 @@ interface ImageUploaderProps {
  * comprobantes) en un input oculto `name` como lista JSON, para que un Server
  * Action las lea desde el FormData. Solo imágenes de hasta 5 MB.
  */
-export function ImageUploader({ bucket, name, multiple = false, maxFiles = 1 }: ImageUploaderProps) {
-  const [urls, setUrls] = useState<string[]>([]);
+export function ImageUploader({
+  bucket,
+  name,
+  multiple = false,
+  maxFiles = 1,
+  initialUrls = [],
+  borrarAlQuitar = true,
+}: ImageUploaderProps) {
+  const [urls, setUrls] = useState<string[]>(initialUrls);
   const [subiendo, setSubiendo] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -71,7 +85,7 @@ export function ImageUploader({ bucket, name, multiple = false, maxFiles = 1 }: 
     setUrls((prev) => prev.filter((u) => u !== url));
     // Mejor esfuerzo: borra el archivo de los buckets públicos para no dejar fotos sueltas.
     // (En comprobantes no hay política de borrado: queda para el administrador.)
-    if (bucket === 'comprobantes') return;
+    if (bucket === 'comprobantes' || !borrarAlQuitar) return;
     const marca = `/storage/v1/object/public/${bucket}/`;
     const ruta = url.includes(marca) ? decodeURIComponent(url.split(marca)[1] ?? '') : '';
     if (ruta) await createClient().storage.from(bucket).remove([ruta]);

@@ -1,18 +1,34 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { CATEGORIAS, TIPOS_PRODUCTO, ETIQUETAS_TIPO_PRODUCTO } from '@emprende/core';
-import { crearProductoAction } from '@/lib/actions/emprendimiento';
+import type { Database } from '@emprende/db';
+import { crearProductoAction, editarProductoAction } from '@/lib/actions/emprendimiento';
 import { ImageUploader } from '@/components/ImageUploader';
 import type { EstadoFormulario } from '@/lib/actions/auth';
 import { useAccion } from '@/lib/useAccion';
 
 const estadoInicial: EstadoFormulario = {};
 
-export function ProductoForm({ emprendimientoId }: { emprendimientoId: string }) {
-  const accionConId = crearProductoAction.bind(null, emprendimientoId);
-  const [estado, propsFormulario, enviando] = useAccion(accionConId, estadoInicial);
-  const [tipo, setTipo] = useState<(typeof TIPOS_PRODUCTO)[number]>('producto');
+type ProductoEditable = Pick<
+  Database['public']['Tables']['productos']['Row'],
+  'id' | 'tipo' | 'nombre' | 'descripcion' | 'precio' | 'categoria_slug' | 'imagenes'
+>;
+
+/** Sin `producto` publica uno nuevo; con `producto` edita esa publicación. */
+export function ProductoForm({
+  emprendimientoId,
+  producto,
+}: {
+  emprendimientoId: string;
+  producto?: ProductoEditable;
+}) {
+  const accion = producto
+    ? editarProductoAction.bind(null, producto.id)
+    : crearProductoAction.bind(null, emprendimientoId);
+  const [estado, propsFormulario, enviando] = useAccion(accion, estadoInicial);
+  const [tipo, setTipo] = useState<(typeof TIPOS_PRODUCTO)[number]>(producto?.tipo ?? 'producto');
 
   return (
     <form {...propsFormulario} className="flex max-w-lg flex-col gap-4">
@@ -49,6 +65,7 @@ export function ProductoForm({ emprendimientoId }: { emprendimientoId: string })
         <input
           id="nombre"
           name="nombre"
+          defaultValue={producto?.nombre}
           required
           minLength={2}
           maxLength={100}
@@ -63,6 +80,7 @@ export function ProductoForm({ emprendimientoId }: { emprendimientoId: string })
         <textarea
           id="descripcion"
           name="descripcion"
+          defaultValue={producto?.descripcion}
           required
           minLength={5}
           maxLength={1000}
@@ -79,6 +97,7 @@ export function ProductoForm({ emprendimientoId }: { emprendimientoId: string })
           <input
             id="precio"
             name="precio"
+            defaultValue={producto?.precio}
             type="number"
             step="0.10"
             min="0.10"
@@ -94,6 +113,7 @@ export function ProductoForm({ emprendimientoId }: { emprendimientoId: string })
           <select
             id="categoriaSlug"
             name="categoriaSlug"
+            defaultValue={producto?.categoria_slug}
             required
             className="rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100"
           >
@@ -110,7 +130,14 @@ export function ProductoForm({ emprendimientoId }: { emprendimientoId: string })
         <span className="text-sm font-medium text-neutral-700">
           Fotos (opcional, hasta 6){tipo === 'servicio' && ' — por ejemplo, trabajos anteriores'}
         </span>
-        <ImageUploader bucket="productos" name="imagenes" multiple maxFiles={6} />
+        <ImageUploader
+          bucket="productos"
+          name="imagenes"
+          multiple
+          maxFiles={6}
+          initialUrls={producto?.imagenes ?? []}
+          borrarAlQuitar={!producto}
+        />
       </div>
 
       {estado.error && (
@@ -124,8 +151,22 @@ export function ProductoForm({ emprendimientoId }: { emprendimientoId: string })
         disabled={enviando}
         className="rounded-full bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60"
       >
-        {enviando ? 'Publicando…' : `Publicar ${tipo === 'servicio' ? 'servicio' : 'producto'}`}
+        {producto
+          ? enviando
+            ? 'Guardando…'
+            : 'Guardar cambios'
+          : enviando
+            ? 'Publicando…'
+            : `Publicar ${tipo === 'servicio' ? 'servicio' : 'producto'}`}
       </button>
+      {producto && (
+        <Link
+          href="/mi-emprendimiento"
+          className="text-center text-sm font-medium text-neutral-600 underline hover:text-primary-700"
+        >
+          Cancelar
+        </Link>
+      )}
     </form>
   );
 }
