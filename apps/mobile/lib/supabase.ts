@@ -1,6 +1,6 @@
 import 'react-native-url-polyfill/auto';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createSupabaseClient } from '@emprende/db';
+import { almacenamientoSeguro } from './almacenamientoSeguro';
 
 const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
@@ -22,7 +22,7 @@ export const supabase = createSupabaseClient(
   anonKey || 'placeholder-anon-key',
   {
     auth: {
-      storage: AsyncStorage,
+      storage: almacenamientoSeguro, // la sesión va al llavero del teléfono, no a AsyncStorage (texto sin cifrar)
       autoRefreshToken: true,
       persistSession: true,
       detectSessionInUrl: false,
