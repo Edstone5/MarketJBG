@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Alert, SafeAreaView, Text, TextInput, View } from 'react-native';
 import { Link, router } from 'expo-router';
-import { DOMINIO_INSTITUCIONAL, registroSchema } from '@emprende/core';
+import { DOMINIO_INSTITUCIONAL, mensajeError, primerError, registroSchema } from '@emprende/core';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/Button';
 
@@ -14,7 +14,7 @@ export default function RegistroScreen() {
   async function registrarse() {
     const resultado = registroSchema.safeParse({ nombreCompleto, email, password });
     if (!resultado.success) {
-      Alert.alert('Revisa el formulario', resultado.error.issues[0]?.message);
+      Alert.alert('Revisa el formulario', primerError(resultado.error));
       return;
     }
 
@@ -27,7 +27,7 @@ export default function RegistroScreen() {
     setEnviando(false);
 
     if (error) {
-      Alert.alert('No se pudo crear la cuenta', error.message);
+      Alert.alert('No se pudo crear la cuenta', mensajeError(error, 'Inténtalo de nuevo en unos minutos.'));
       return;
     }
     Alert.alert('Revisa tu correo', 'Te enviamos un enlace para confirmar tu cuenta.');

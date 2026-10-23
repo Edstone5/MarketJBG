@@ -1,7 +1,15 @@
 import { useCallback, useState } from 'react';
 import { Alert, RefreshControl, SafeAreaView, ScrollView, Text, TextInput, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
-import { CATEGORIAS, crearEmprendimientoSchema, ETIQUETAS_TIPO_PRODUCTO } from '@emprende/core';
+import {
+  CATEGORIAS,
+  crearEmprendimientoSchema,
+  estadoEfectivo,
+  ETIQUETAS_TIPO_PRODUCTO,
+  formatearFecha,
+  mensajeError,
+  primerError,
+} from '@emprende/core';
 import { crearEmprendimiento, obtenerMiEmprendimiento, type Database } from '@emprende/db';
 import { PlusCircle } from 'lucide-react-native';
 import { supabase, supabaseConfigurado } from '@/lib/supabase';
@@ -32,6 +40,8 @@ export default function VenderScreen() {
     try {
       const data = await obtenerMiEmprendimiento(supabase, user.id);
       setEmprendimiento(data as Emprendimiento | null);
+    } catch (error) {
+      Alert.alert('No se pudo cargar tu emprendimiento', mensajeError(error, 'Desliza hacia abajo para reintentar.'));
     } finally {
       setCargando(false);
     }
@@ -59,7 +69,8 @@ export default function VenderScreen() {
   }
 
   if (emprendimiento) {
-    const estado = ETIQUETAS_ESTADO[emprendimiento.estado];
+    const estadoActual = estadoEfectivo(emprendimiento.estado, emprendimiento.activo_hasta);
+    const estado = ETIQUETAS_ESTADO[estadoActual];
     return (
       <SafeAreaView className="flex-1 bg-neutral-50">
         <ScrollView
@@ -69,15 +80,30 @@ export default function VenderScreen() {
           <View>
             <Text className="text-2xl font-bold text-neutral-900">{emprendimiento.nombre}</Text>
             <Text className={`mt-1 self-start rounded-full px-3 py-0.5 text-xs font-medium ${estado?.clase ?? ''}`}>
-              {estado?.texto ?? emprendimiento.estado}
+              {estado?.texto ?? estadoActual}
             </Text>
+            {estadoActual === 'activo' && (
+              <Text className="mt-1 text-xs text-neutral-500">
+                Suscripción vigente hasta el {formatearFecha(emprendimiento.activo_hasta)}
+              </Text>
+            )}
           </View>
 
-          {emprendimiento.estado !== 'activo' && (
+          {estadoActual === 'suspendido' && (
+            <View className="rounded-lg border border-neutral-300 bg-neutral-100 p-3">
+              <Text className="text-sm text-neutral-700">
+                Tu emprendimiento está suspendido y no aparece en el catálogo. Escríbenos para revisar
+                tu caso.
+              </Text>
+            </View>
+          )}
+          {(estadoActual === 'pendiente' || estadoActual === 'vencido') && (
             <View className="rounded-lg border border-amber-200 bg-amber-50 p-3">
               <Text className="text-sm text-amber-800">
-                Tu emprendimiento aún no aparece en el catálogo público. Reporta tu pago de
-                suscripción por Yape para activarlo.
+                {estadoActual === 'vencido'
+                  ? 'Tu suscripción venció y tu emprendimiento ya no aparece en el catálogo público. '
+                  : 'Tu emprendimiento aún no aparece en el catálogo público. '}
+                Reporta tu pago de suscripción por Yape y un administrador lo validará.
               </Text>
             </View>
           )}
@@ -147,7 +173,7 @@ function FormularioNuevoEmprendimiento({
       categoriaSlug,
     });
     if (!resultado.success) {
-      Alert.alert('Revisa el formulario', resultado.error.issues[0]?.message);
+      Alert.alert('Revisa el formulario', primerError(resultado.error));
       return;
     }
 
@@ -156,7 +182,7 @@ function FormularioNuevoEmprendimiento({
       const nuevo = await crearEmprendimiento(supabase, usuarioId, resultado.data);
       onCreado(nuevo as Emprendimiento);
     } catch (error) {
-      Alert.alert('Error', error instanceof Error ? error.message : 'No se pudo crear');
+      Alert.alert('No se pudo crear', mensajeError(error, 'Inténtalo de nuevo.'));
     } finally {
       setEnviando(false);
     }

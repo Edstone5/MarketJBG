@@ -1,11 +1,13 @@
 import { useState } from 'react';
+import { mensajeError } from '@emprende/core';
 import { Alert, Linking, SafeAreaView, ScrollView, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { useAuth } from '@/providers/AuthProvider';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/Button';
 
-const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL ?? 'http://localhost:3000';
+// En una app publicada la URL del sitio es obligatoria: un teléfono real no puede usar localhost.
+const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL ?? (__DEV__ ? 'http://localhost:3000' : '');
 
 export default function PerfilScreen() {
   const { user, session, cargando } = useAuth();
@@ -45,6 +47,13 @@ export default function PerfilScreen() {
 
   async function eliminarCuenta() {
     if (!session) return;
+    if (!WEB_URL) {
+      Alert.alert(
+        'No disponible',
+        'No se pudo contactar con el servidor. Elimina tu cuenta desde la web (marketjbg.com/eliminar-cuenta).',
+      );
+      return;
+    }
     setEliminando(true);
     try {
       const respuesta = await fetch(`${WEB_URL}/api/cuenta`, {
@@ -53,11 +62,12 @@ export default function PerfilScreen() {
       });
       if (!respuesta.ok) {
         const cuerpo = await respuesta.json().catch(() => ({ error: null }));
-        throw new Error(cuerpo?.error ?? 'No se pudo eliminar la cuenta.');
+        Alert.alert('No se pudo eliminar', cuerpo?.error ?? 'Inténtalo de nuevo.');
+        return;
       }
       await supabase.auth.signOut();
     } catch (error) {
-      Alert.alert('Error', error instanceof Error ? error.message : 'No se pudo eliminar la cuenta.');
+      Alert.alert('No se pudo eliminar', mensajeError(error, 'Inténtalo de nuevo.'));
     } finally {
       setEliminando(false);
     }
@@ -94,6 +104,7 @@ export default function PerfilScreen() {
 }
 
 function EnlacesLegales() {
+  if (!WEB_URL) return null;
   return (
     <View className="mt-6 items-center gap-2">
       <Text className="text-xs text-primary-700" onPress={() => Linking.openURL(`${WEB_URL}/privacidad`)}>

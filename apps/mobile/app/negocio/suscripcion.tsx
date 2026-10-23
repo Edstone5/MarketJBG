@@ -1,7 +1,16 @@
 import { useEffect, useState } from 'react';
 import { Alert, SafeAreaView, ScrollView, Text, TextInput, View } from 'react-native';
 import { router } from 'expo-router';
-import { PRECIO_SUSCRIPCION_MENSUAL, reportarPagoSchema } from '@emprende/core';
+import {
+  estadoEfectivo,
+  ETIQUETAS_ESTADO_PAGO,
+  formatearFecha,
+  mensajeError,
+  PRECIO_SUSCRIPCION_MENSUAL,
+  primerError,
+  reportarPagoSchema,
+  type EstadoEmprendimiento,
+} from '@emprende/core';
 import { obtenerMiEmprendimiento, reportarPago, type Database } from '@emprende/db';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/providers/AuthProvider';
@@ -10,15 +19,11 @@ import { ImageUploader } from '@/components/ImageUploader';
 
 type Pago = Database['public']['Tables']['pagos']['Row'];
 
-const ETIQUETAS_PAGO: Record<string, string> = {
-  pendiente: 'Pendiente de revisión',
-  aprobado: 'Aprobado',
-  rechazado: 'Rechazado',
-};
-
 export default function SuscripcionScreen() {
   const { user } = useAuth();
   const [emprendimientoId, setEmprendimientoId] = useState<string | null>(null);
+  const [estado, setEstado] = useState<EstadoEmprendimiento>('pendiente');
+  const [activoHasta, setActivoHasta] = useState<string | null>(null);
   const [pagos, setPagos] = useState<Pago[]>([]);
   const [monto, setMonto] = useState(String(PRECIO_SUSCRIPCION_MENSUAL));
   const [comprobante, setComprobante] = useState<string[]>([]);
@@ -31,8 +36,14 @@ export default function SuscripcionScreen() {
       .then((emprendimiento) => {
         if (!emprendimiento) return;
         setEmprendimientoId(emprendimiento.id);
-        setPagos((emprendimiento.pagos ?? []) as Pago[]);
+        setEstado(estadoEfectivo(emprendimiento.estado, emprendimiento.activo_hasta));
+        setActivoHasta(emprendimiento.activo_hasta);
+        const lista = (emprendimiento.pagos ?? []) as Pago[];
+        setPagos([...lista].sort((a, b) => b.creado_en.localeCompare(a.creado_en)));
       })
+      .catch((error) =>
+        Alert.alert('No se pudo cargar tu suscripción', mensajeError(error, 'Inténtalo de nuevo.')),
+      )
       .finally(() => setCargando(false));
   }, [user]);
 
@@ -42,7 +53,7 @@ export default function SuscripcionScreen() {
       comprobanteUrl: comprobante[0],
     });
     if (!resultado.success) {
-      Alert.alert('Revisa el formulario', resultado.error.issues[0]?.message);
+      Alert.alert('Revisa el formulario', primerError(resultado.error));
       return;
     }
     if (!emprendimientoId) return;
@@ -52,11 +63,11 @@ export default function SuscripcionScreen() {
       await reportarPago(supabase, emprendimientoId, resultado.data);
       Alert.alert(
         'Pago reportado',
-        'Un administrador revisará tu comprobante en menos de 24 horas.',
+        'Un administrador validará tu comprobante, normalmente en menos de 24 horas.',
       );
       router.back();
     } catch (error) {
-      Alert.alert('Error', error instanceof Error ? error.message : 'No se pudo reportar el pago.');
+      Alert.alert('No se pudo reportar el pago', mensajeError(error, 'Inténtalo de nuevo.'));
     } finally {
       setEnviando(false);
     }
@@ -69,10 +80,20 @@ export default function SuscripcionScreen() {
       <ScrollView contentContainerStyle={{ padding: 16, gap: 16 }}>
         <Text className="text-2xl font-bold text-neutral-900">Suscripción mensual</Text>
         <Text className="text-sm text-neutral-500">
-          Tu emprendimiento aparece en el catálogo público mientras la suscripción esté activa.
-          Paga S/ {PRECIO_SUSCRIPCION_MENSUAL} por Yape y sube el comprobante para su revisión
-          manual.
+          Tu emprendimiento aparece en el catálogo público mientras la suscripción esté vigente.
+          Paga S/ {PRECIO_SUSCRIPCION_MENSUAL} por Yape y sube el comprobante para que un
+          administrador lo valide.
         </Text>
+
+        <View className="rounded-xl border border-neutral-200 bg-white p-4">
+          <Text className="mb-1 text-sm font-semibold text-neutral-900">Estado</Text>
+          <Text className="text-sm text-neutral-700">
+            {estado === 'activo' && `Vigente hasta el ${formatearFecha(activoHasta)}.`}
+            {estado === 'pendiente' && 'Aún no tienes una suscripción validada.'}
+            {estado === 'vencido' && 'Tu suscripción venció. Reporta un nuevo pago para volver al catálogo.'}
+            {estado === 'suspendido' && 'Tu emprendimiento está suspendido. Escríbenos para revisar tu caso.'}
+          </Text>
+        </View>
 
         {pagos.length > 0 && (
           <View className="rounded-xl border border-neutral-200 bg-white p-4">
@@ -82,8 +103,9 @@ export default function SuscripcionScreen() {
             {pagos.map((pago) => (
               <View key={pago.id} className="flex-row items-center justify-between py-1">
                 <Text className="text-sm text-neutral-700">S/ {pago.monto_reportado}</Text>
+                <Text className="text-sm text-neutral-500">{formatearFecha(pago.creado_en)}</Text>
                 <Text className="text-sm font-medium text-neutral-700">
-                  {ETIQUETAS_PAGO[pago.estado] ?? pago.estado}
+                  {ETIQUETAS_ESTADO_PAGO[pago.estado] ?? pago.estado}
                 </Text>
               </View>
             ))}
@@ -115,7 +137,7 @@ export default function SuscripcionScreen() {
         <Button
           texto={enviando ? 'Enviando…' : 'Reportar pago'}
           onPress={reportar}
-          disabled={enviando || !emprendimientoId}
+          disabled={enviando || !emprendimientoId || estado === 'suspendido'}
         />
       </ScrollView>
     </SafeAreaView>

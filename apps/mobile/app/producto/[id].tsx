@@ -13,16 +13,24 @@ export default function ProductoScreen() {
   const [producto, setProducto] = useState<Awaited<ReturnType<typeof obtenerProductoPorId>> | null>(
     null,
   );
+  const [noDisponible, setNoDisponible] = useState(false);
 
   useEffect(() => {
     if (!id) return;
-    obtenerProductoPorId(supabase, id).then(setProducto).catch(console.warn);
+    obtenerProductoPorId(supabase, id)
+      .then(setProducto)
+      .catch((error) => {
+        console.warn('Error al cargar el producto', error);
+        setNoDisponible(true);
+      });
   }, [id]);
 
   if (!producto) {
     return (
       <SafeAreaView className="flex-1 items-center justify-center bg-white">
-        <Text className="text-neutral-500">Cargando…</Text>
+        <Text className="px-8 text-center text-neutral-500">
+          {noDisponible ? 'Este producto ya no está disponible.' : 'Cargando…'}
+        </Text>
       </SafeAreaView>
     );
   }
@@ -36,7 +44,7 @@ export default function ProductoScreen() {
     if (!emprendimiento) return;
     const numero = emprendimiento.whatsapp.replace(/\D/g, '');
     const mensaje = encodeURIComponent(
-      `Hola, vi "${producto?.nombre}" en Emprende UNJBG y me interesa 🙂`,
+      `Hola, vi "${producto?.nombre}" en MarketJBG y me interesa 🙂`,
     );
     Linking.openURL(`https://wa.me/${numero}?text=${mensaje}`);
   }

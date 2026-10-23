@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Alert, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
-import { ImagePlus, Loader2, X } from 'lucide-react-native';
+import { ImagePlus, X } from 'lucide-react-native';
+import { mensajeError, validarArchivoImagen } from '@emprende/core';
 import { supabase } from '@/lib/supabase';
 
 interface ImageUploaderProps {
@@ -44,16 +45,28 @@ export function ImageUploader({
     });
     if (resultado.canceled || resultado.assets.length === 0) return;
 
+    const elegidas = resultado.assets.slice(0, maxFiles - value.length);
+    for (const asset of elegidas) {
+      const motivo = validarArchivoImagen({ type: asset.mimeType, size: asset.fileSize });
+      if (motivo) {
+        Alert.alert('Imagen no válida', motivo);
+        return;
+      }
+    }
+
     setSubiendo(true);
+    const nuevasUrls: string[] = [];
     try {
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      if (!user) throw new Error('Debes iniciar sesión para subir archivos.');
+      if (!user) throw new Error('Tu sesión expiró. Vuelve a iniciar sesión.');
 
-      const nuevasUrls: string[] = [];
-      for (const asset of resultado.assets.slice(0, maxFiles - value.length)) {
-        const extension = asset.uri.split('.').pop()?.split('?')[0] || 'jpg';
+      for (const asset of elegidas) {
+        // solo letras y números en la extensión: viene de la ruta del archivo en el teléfono
+        const extension =
+          (asset.uri.split('.').pop() ?? '').split('?')[0]!.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 5) ||
+          'jpg';
         const ruta = `${user.id}/${Date.now()}-${Math.round(Math.random() * 1e6)}.${extension}`;
         const bytes = await fetch(asset.uri).then((respuesta) => respuesta.arrayBuffer());
 
@@ -69,10 +82,11 @@ export function ImageUploader({
           nuevasUrls.push(data.publicUrl);
         }
       }
-      onChange([...value, ...nuevasUrls]);
     } catch (error) {
-      Alert.alert('Error', error instanceof Error ? error.message : 'No se pudo subir la imagen.');
+      Alert.alert('No se pudo subir la imagen', mensajeError(error, 'Inténtalo de nuevo.'));
     } finally {
+      // lo que sí se alcanzó a subir se conserva aunque otra imagen falle
+      if (nuevasUrls.length > 0) onChange([...value, ...nuevasUrls]);
       setSubiendo(false);
     }
   }
@@ -104,7 +118,7 @@ export function ImageUploader({
           className="h-20 w-20 items-center justify-center gap-1 rounded-lg border border-dashed border-neutral-300"
         >
           {subiendo ? (
-            <Loader2 size={20} color="#94a3b8" />
+            <ActivityIndicator size="small" color="#94a3b8" />
           ) : (
             <ImagePlus size={20} color="#94a3b8" />
           )}

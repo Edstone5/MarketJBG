@@ -6,6 +6,8 @@ import {
   TIPOS_PRODUCTO,
   ETIQUETAS_TIPO_PRODUCTO,
   crearProductoSchema,
+  mensajeError,
+  primerError,
   type TipoProducto,
 } from '@emprende/core';
 import { crearProducto, obtenerMiEmprendimiento } from '@emprende/db';
@@ -34,7 +36,7 @@ export default function NuevoProductoScreen() {
       imagenes,
     });
     if (!resultado.success) {
-      Alert.alert('Revisa el formulario', resultado.error.issues[0]?.message);
+      Alert.alert('Revisa el formulario', primerError(resultado.error));
       return;
     }
     if (!user) return;
@@ -42,13 +44,16 @@ export default function NuevoProductoScreen() {
     setEnviando(true);
     try {
       const emprendimiento = await obtenerMiEmprendimiento(supabase, user.id);
-      if (!emprendimiento) throw new Error('Primero crea tu emprendimiento.');
+      if (!emprendimiento) {
+        Alert.alert('Falta tu emprendimiento', 'Primero crea tu perfil comercial en la pestaña Vender.');
+        return;
+      }
 
       await crearProducto(supabase, emprendimiento.id, resultado.data);
       Alert.alert('Publicado', `Tu ${tipo === 'servicio' ? 'servicio' : 'producto'} ya está publicado.`);
       router.back();
     } catch (error) {
-      Alert.alert('Error', error instanceof Error ? error.message : 'No se pudo publicar.');
+      Alert.alert('No se pudo publicar', mensajeError(error, 'Inténtalo de nuevo.'));
     } finally {
       setEnviando(false);
     }

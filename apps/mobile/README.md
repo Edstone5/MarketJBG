@@ -1,4 +1,4 @@
-# apps/mobile — Emprende UNJBG (Expo / React Native)
+# apps/mobile — MarketJBG (Expo / React Native)
 
 App móvil del catálogo (Android + iOS). Ver la documentación completa del monorepo en el
 [README de la raíz](../../README.md).
@@ -23,6 +23,11 @@ pnpm dev:mobile
 - ✅ Eliminar cuenta (pestaña Perfil) y enlaces a Política de Privacidad / Términos
 - ✅ Publicación de productos o servicios con fotos desde el celular (`expo-image-picker`)
 - ✅ Pantalla de suscripción / reporte de pago Yape, con historial de pagos
-- 🚧 Notificaciones push (aprobación de pago, nuevo mensaje)
-- 🚧 Editar o desactivar una publicación existente (hoy solo se puede crear; para
-  quitar del catálogo un producto agotado o desactivar la cuenta hay que usar la web)
+- 🚧 Notificaciones push (validación de pago, nuevo mensaje)
+- 🚧 Editar o desactivar una publicación existente (hoy solo se puede crear, tampoco existe
+  en la web; mientras tanto se pide por correo, ver la Política de Privacidad)
+
+> Empaquetado: `apps/mobile/metro.config.js` usa la configuración por defecto de Expo. No
+> desactives `resolver.disableHierarchicalLookup` ni fijes `nodeModulesPaths`: con el
+> `node_modules` aislado de pnpm la app deja de empaquetar. Comprobación rápida (no genera
+> instaladores): `pnpm --filter mobile exec expo export --platform android`.

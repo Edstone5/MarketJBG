@@ -8,6 +8,7 @@ import { ProductCard, type ProductoCatalogo } from '@/components/ProductCard';
 export default function InicioScreen() {
   const [productos, setProductos] = useState<ProductoCatalogo[]>([]);
   const [cargando, setCargando] = useState(true);
+  const [fallo, setFallo] = useState(false);
 
   const cargar = useCallback(async () => {
     if (!supabaseConfigurado) {
@@ -15,10 +16,12 @@ export default function InicioScreen() {
       return;
     }
     try {
+      setFallo(false);
       const data = await listarProductosCatalogo(supabase, { ordenarPor: 'recientes' });
       setProductos((data ?? []) as unknown as ProductoCatalogo[]);
     } catch (error) {
       console.warn('Error al cargar el catálogo', error);
+      setFallo(true);
     } finally {
       setCargando(false);
     }
@@ -60,9 +63,13 @@ export default function InicioScreen() {
         ListEmptyComponent={
           !cargando ? (
             <Text className="mt-6 px-4 text-center text-sm text-neutral-500">
-              {supabaseConfigurado
-                ? 'Todavía no hay productos publicados.'
-                : 'Configura EXPO_PUBLIC_SUPABASE_URL y EXPO_PUBLIC_SUPABASE_ANON_KEY en apps/mobile/.env'}
+              {fallo
+                ? 'No pudimos cargar el catálogo. Desliza hacia abajo para reintentar.'
+                : supabaseConfigurado
+                  ? 'Todavía no hay productos publicados.'
+                  : __DEV__
+                    ? 'Configura EXPO_PUBLIC_SUPABASE_URL y EXPO_PUBLIC_SUPABASE_ANON_KEY en apps/mobile/.env'
+                    : 'No pudimos conectar con el servidor.'}
             </Text>
           ) : null
         }

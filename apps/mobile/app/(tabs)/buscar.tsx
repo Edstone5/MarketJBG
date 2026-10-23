@@ -11,11 +11,13 @@ export default function BuscarScreen() {
   const [categoria, setCategoria] = useState<string | undefined>();
   const [productos, setProductos] = useState<ProductoCatalogo[]>([]);
   const [cargando, setCargando] = useState(false);
+  const [fallo, setFallo] = useState(false);
 
   useEffect(() => {
     if (!supabaseConfigurado) return;
     const timeout = setTimeout(async () => {
       setCargando(true);
+      setFallo(false);
       try {
         const filtro: Partial<FiltroCatalogo> = {
           query: query || undefined,
@@ -26,6 +28,7 @@ export default function BuscarScreen() {
         setProductos((data ?? []) as unknown as ProductoCatalogo[]);
       } catch (error) {
         console.warn('Error al buscar', error);
+        setFallo(true);
       } finally {
         setCargando(false);
       }
@@ -59,9 +62,13 @@ export default function BuscarScreen() {
         ListEmptyComponent={
           !cargando ? (
             <Text className="mt-6 px-4 text-center text-sm text-neutral-500">
-              {supabaseConfigurado
-                ? 'No encontramos productos con esos filtros.'
-                : 'Configura Supabase para ver el catálogo (apps/mobile/.env).'}
+              {fallo
+                ? 'No pudimos buscar en este momento. Inténtalo de nuevo.'
+                : supabaseConfigurado
+                  ? 'No encontramos productos con esos filtros.'
+                  : __DEV__
+                    ? 'Configura Supabase para ver el catálogo (apps/mobile/.env).'
+                    : 'No pudimos conectar con el servidor.'}
             </Text>
           ) : null
         }

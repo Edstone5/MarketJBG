@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Alert, SafeAreaView, Text, TextInput, View } from 'react-native';
 import { Link, router } from 'expo-router';
-import { loginSchema } from '@emprende/core';
+import { loginSchema, mensajeError, primerError } from '@emprende/core';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/Button';
 
@@ -13,7 +13,7 @@ export default function LoginScreen() {
   async function ingresar() {
     const resultado = loginSchema.safeParse({ email, password });
     if (!resultado.success) {
-      Alert.alert('Revisa el formulario', resultado.error.issues[0]?.message);
+      Alert.alert('Revisa el formulario', primerError(resultado.error));
       return;
     }
 
@@ -22,7 +22,7 @@ export default function LoginScreen() {
     setEnviando(false);
 
     if (error) {
-      Alert.alert('No se pudo ingresar', 'Correo o contraseña incorrectos.');
+      Alert.alert('No se pudo ingresar', mensajeError(error, 'Correo o contraseña incorrectos.'));
       return;
     }
     router.back();
@@ -38,6 +38,7 @@ export default function LoginScreen() {
           value={email}
           onChangeText={setEmail}
           autoCapitalize="none"
+          autoComplete="email"
           keyboardType="email-address"
           placeholder="tunombre@unjbg.edu.pe"
           className="rounded-lg border border-neutral-300 px-3 py-2.5 text-sm"
