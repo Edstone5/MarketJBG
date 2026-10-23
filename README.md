@@ -1,4 +1,4 @@
-# Emprende UNJBG
+# MarketJBG
 
 Catálogo de emprendimientos estudiantiles de la Universidad Nacional Jorge Basadre Grohmann
 (Tacna, Perú). Conecta a estudiantes emprendedores con consumidores dentro de la comunidad
@@ -11,7 +11,7 @@ React Native) compartiendo la misma lógica de negocio, tipos y conexión a base
 ## Estructura del monorepo
 
 ```
-emprende-unjbg/
+marketjbg/
 ├── apps/
 │   ├── web/          # Next.js 16 (App Router) — catálogo público + paneles
 │   └── mobile/        # Expo / React Native (expo-router) — Android + iOS
@@ -37,7 +37,7 @@ emprende-unjbg/
 
 ## Requisitos
 
-- Node.js 20+
+- Node.js 22+ (ver `.nvmrc`; Node 20 ya no recibe actualizaciones de seguridad)
 - pnpm 9+ (`corepack enable` o `npm install -g pnpm`)
 - Una cuenta de [Supabase](https://supabase.com) (plan gratuito alcanza para empezar)
 - Para compilar la app móvil: cuenta de [Expo](https://expo.dev) (EAS Build/Submit)
@@ -56,7 +56,12 @@ pnpm install
    `supabase/migrations/`), o pega el contenido de cada archivo `.sql` en el SQL Editor del
    dashboard, en orden.
 3. Ejecuta `supabase/seed/seed.sql` para cargar las categorías iniciales.
-4. En **Authentication > Providers**, deja habilitado el login por correo/contraseña.
+4. En **Authentication > Providers**, deja habilitado el login por correo/contraseña y, en
+   **Authentication > Sign In / Providers > Email**, activa **Confirm email** y pon la longitud
+   mínima de contraseña en 8 (igual que el formulario). En **Authentication > URL Configuration**
+   pon la URL real del sitio como *Site URL* y agrega `<tu-sitio>/auth/callback` a las
+   *Redirect URLs*. Estos ajustes viven en el proyecto de Supabase, no en las migraciones
+   (`supabase/config.toml` solo vale para el entorno local).
 5. Copia la URL del proyecto y la `anon key` (Project Settings > API).
 
 ### 2. Variables de entorno
@@ -142,7 +147,7 @@ crea cuentas de usuario:
    y [`.../terminos/page.tsx`](apps/web/src/app/(legal)/terminos/page.tsx) y resuelve la nota
    en amarillo: define quién es el responsable legal del tratamiento de datos (¿el equipo del
    taller, una asociación de estudiantes, la UNJBG?) y reemplaza los correos de contacto
-   placeholder (`privacidad@emprendeunjbg.com`, `soporte@emprendeunjbg.com`) por uno real que el
+   placeholder (`privacidad@marketjbg.com`, `soporte@marketjbg.com`) por uno real que el
    equipo revise.
 2. Pide que un asesor legal o la oficina competente de la UNJBG revise ambos documentos — el
    texto actual es una plantilla funcional, no asesoría legal.
@@ -165,6 +170,7 @@ Auth (lo que en cascada borra su perfil, emprendimiento, productos y pagos).
 | `pnpm build` | Build de producción de todo el monorepo |
 | `pnpm lint` | Lint de todos los paquetes |
 | `pnpm typecheck` | Chequeo de tipos de todo el monorepo |
+| `pnpm test` | Pruebas de seguridad de la base de datos (carga las migraciones en un Postgres en memoria; no necesita Supabase) |
 | `pnpm format` | Formatea con Prettier |
 
 ## Modelo de datos
@@ -174,7 +180,19 @@ en orden). Entidades principales: `perfiles` (extiende `auth.users`), `emprendim
 `productos` — que incluye tanto bienes físicos como servicios (tutorías, diseño, impresiones...)
 distinguidos por la columna `tipo` — `categorias` y `pagos` (registro de suscripción +
 comprobante Yape, sección 2.7 del documento base del proyecto). Las políticas de seguridad por
-fila están en [`0002_rls.sql`](supabase/migrations/0002_rls.sql).
+fila están en [`0002_rls.sql`](supabase/migrations/0002_rls.sql) y se endurecen en
+[`0005_seguridad_y_dos_estados_de_pago.sql`](supabase/migrations/0005_seguridad_y_dos_estados_de_pago.sql).
+
+**Suscripción.** Un pago solo tiene dos estados: `pendiente` (lo reporta el emprendedor con su
+captura de Yape) y `validado` (lo valida un administrador con la función `validar_pago`, que en una
+sola transacción activa el emprendimiento por un mes: `emprendimientos.activo_hasta`). El catálogo
+público solo muestra negocios `activo` con `activo_hasta` en el futuro; esa regla la aplica la base
+de datos, no solo la pantalla. El dueño no puede cambiar su `estado`, su vigencia ni su `rol`, ni
+crear pagos ya validados: lo comprueban las pruebas de `supabase/tests/`.
+
+**Dominio institucional.** Solo se registran correos `@unjbg.edu.pe`; lo exige el disparador
+`handle_new_user` (no solo el formulario). Si cambias `DOMINIO_INSTITUCIONAL`
+(`packages/core/src/constants/roles.ts`), cambia también esa función.
 
 ## Contribuir
 
