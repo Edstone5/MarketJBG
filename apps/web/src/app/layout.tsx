@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: 'Emprende UNJBG · Catálogo de Emprendimientos Universitarios',
-    template: '%s · Emprende UNJBG',
+    default: 'MarketJBG · Catálogo de Emprendimientos Universitarios',
+    template: '%s · MarketJBG',
   },
   description:
     'Catálogo de emprendimientos de estudiantes de la Universidad Nacional Jorge Basadre Grohmann. Descubre y apoya negocios verificados de tu propia comunidad universitaria.',

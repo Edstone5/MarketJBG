@@ -1,20 +1,21 @@
 'use client';
 
-import { useActionState, useState } from 'react';
+import { useState } from 'react';
 import { CATEGORIAS, TIPOS_PRODUCTO, ETIQUETAS_TIPO_PRODUCTO } from '@emprende/core';
 import { crearProductoAction } from '@/lib/actions/emprendimiento';
 import { ImageUploader } from '@/components/ImageUploader';
 import type { EstadoFormulario } from '@/lib/actions/auth';
+import { useAccion } from '@/lib/useAccion';
 
 const estadoInicial: EstadoFormulario = {};
 
 export function ProductoForm({ emprendimientoId }: { emprendimientoId: string }) {
   const accionConId = crearProductoAction.bind(null, emprendimientoId);
-  const [estado, accion, enviando] = useActionState(accionConId, estadoInicial);
+  const [estado, propsFormulario, enviando] = useAccion(accionConId, estadoInicial);
   const [tipo, setTipo] = useState<(typeof TIPOS_PRODUCTO)[number]>('producto');
 
   return (
-    <form action={accion} className="flex max-w-lg flex-col gap-4">
+    <form {...propsFormulario} className="flex max-w-lg flex-col gap-4">
       <div className="flex flex-col gap-1">
         <span className="text-sm font-medium text-neutral-700">¿Qué vas a publicar?</span>
         <div className="flex gap-2">
@@ -112,7 +113,11 @@ export function ProductoForm({ emprendimientoId }: { emprendimientoId: string })
         <ImageUploader bucket="productos" name="imagenes" multiple maxFiles={6} />
       </div>
 
-      {estado.error && <p className="text-sm text-red-600">{estado.error}</p>}
+      {estado.error && (
+        <p role="alert" className="text-sm text-red-600">
+          {estado.error}
+        </p>
+      )}
 
       <button
         type="submit"

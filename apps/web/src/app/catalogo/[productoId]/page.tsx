@@ -32,7 +32,7 @@ export default async function ProductoPage({ params }: PageProps<'/catalogo/[pro
   } | null;
 
   const mensajeWhatsapp = encodeURIComponent(
-    `Hola, vi "${producto.nombre}" en Emprende UNJBG y me interesa 🙂`,
+    `Hola, vi "${producto.nombre}" en MarketJBG y me interesa 🙂`,
   );
   const linkWhatsapp = emprendimiento
     ? `https://wa.me/${emprendimiento.whatsapp.replace(/\D/g, '')}?text=${mensajeWhatsapp}`

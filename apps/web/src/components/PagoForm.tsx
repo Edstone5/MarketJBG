@@ -1,19 +1,19 @@
 'use client';
 
-import { useActionState } from 'react';
 import { PRECIO_SUSCRIPCION_MENSUAL } from '@emprende/core';
 import { reportarPagoAction } from '@/lib/actions/emprendimiento';
 import { ImageUploader } from '@/components/ImageUploader';
 import type { EstadoFormulario } from '@/lib/actions/auth';
+import { useAccion } from '@/lib/useAccion';
 
 const estadoInicial: EstadoFormulario = {};
 
 export function PagoForm({ emprendimientoId }: { emprendimientoId: string }) {
   const accionConId = reportarPagoAction.bind(null, emprendimientoId);
-  const [estado, accion, enviando] = useActionState(accionConId, estadoInicial);
+  const [estado, propsFormulario, enviando, version] = useAccion(accionConId, estadoInicial);
 
   return (
-    <form action={accion} className="flex max-w-md flex-col gap-4">
+    <form key={version} {...propsFormulario} className="flex max-w-md flex-col gap-4">
       <div className="flex flex-col gap-1">
         <label htmlFor="montoReportado" className="text-sm font-medium text-neutral-700">
           Monto pagado (S/)
@@ -35,7 +35,16 @@ export function PagoForm({ emprendimientoId }: { emprendimientoId: string }) {
         <ImageUploader bucket="comprobantes" name="comprobanteUrl" maxFiles={1} />
       </div>
 
-      {estado.error && <p className="text-sm text-red-600">{estado.error}</p>}
+      {estado.error && (
+        <p role="alert" className="text-sm text-red-600">
+          {estado.error}
+        </p>
+      )}
+      {estado.mensaje && (
+        <p role="status" className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-800">
+          {estado.mensaje}
+        </p>
+      )}
 
       <button
         type="submit"

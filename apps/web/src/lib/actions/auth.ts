@@ -1,11 +1,14 @@
 'use server';
 
 import { redirect } from 'next/navigation';
-import { loginSchema, registroSchema } from '@emprende/core';
+import { loginSchema, mensajeError, primerError, registroSchema } from '@emprende/core';
 import { createClient } from '@/lib/supabase/server';
+import { rutaInterna } from '@/lib/rutas';
 
 export interface EstadoFormulario {
   error?: string;
+  /** Aviso de éxito para formularios que se quedan en la misma página. */
+  mensaje?: string;
 }
 
 export async function iniciarSesion(
@@ -17,16 +20,18 @@ export async function iniciarSesion(
     password: formData.get('password'),
   });
   if (!resultado.success) {
-    return { error: resultado.error.issues[0]?.message ?? 'Datos inválidos' };
+    return { error: primerError(resultado.error) };
   }
 
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword(resultado.data);
   if (error) {
-    return { error: 'Correo o contraseña incorrectos.' };
+    return { error: mensajeError(error, 'No se pudo iniciar sesión. Inténtalo de nuevo.') };
   }
 
-  redirect('/mi-emprendimiento');
+  // `next` viene del enlace que nos mandó a iniciar sesión; solo se acepta una ruta interna.
+  const destino = formData.get('next');
+  redirect(rutaInterna(typeof destino === 'string' ? destino : null));
 }
 
 export async function registrarse(
@@ -39,7 +44,7 @@ export async function registrarse(
     nombreCompleto: formData.get('nombreCompleto'),
   });
   if (!resultado.success) {
-    return { error: resultado.error.issues[0]?.message ?? 'Datos inválidos' };
+    return { error: primerError(resultado.error) };
   }
 
   const supabase = await createClient();
@@ -52,7 +57,7 @@ export async function registrarse(
     },
   });
   if (error) {
-    return { error: error.message };
+    return { error: mensajeError(error, 'No se pudo crear la cuenta. Inténtalo de nuevo.') };
   }
 
   redirect('/login?registrado=1');

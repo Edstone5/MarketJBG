@@ -28,10 +28,11 @@ export function SearchBar({ initialQuery = '' }: { initialQuery?: string }) {
       />
       <input
         type="search"
+        aria-label="Buscar productos y servicios"
         value={query}
         onChange={(event) => setQuery(event.target.value)}
         placeholder="Busca productos, comida, servicios..."
-        className="w-full rounded-full border border-transparent bg-white py-3 pl-10 pr-4 text-sm shadow-md outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100"
+        className="w-full rounded-full border border-transparent bg-white py-3 pl-10 pr-4 text-sm text-neutral-900 shadow-md outline-none placeholder:text-neutral-400 focus:border-primary-400 focus:ring-2 focus:ring-primary-100"
       />
     </form>
   );

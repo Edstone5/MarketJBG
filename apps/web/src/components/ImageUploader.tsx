@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { ImagePlus, Loader2, X } from 'lucide-react';
+import { mensajeError, nombreArchivoSeguro, TIPOS_IMAGEN_PERMITIDOS, validarArchivoImagen } from '@emprende/core';
 import { createClient } from '@/lib/supabase/client';
 
 interface ImageUploaderProps {
@@ -14,8 +15,9 @@ interface ImageUploaderProps {
 /**
  * Sube archivos a Supabase Storage bajo la carpeta <usuario_id>/... (exigida
  * por las políticas RLS de storage.objects, ver supabase/migrations/0003).
- * Escribe las URLs resultantes en un input oculto `name` separadas por coma,
- * para que un Server Action las lea desde el FormData.
+ * Escribe las URLs resultantes (o las rutas, en el bucket privado de
+ * comprobantes) en un input oculto `name` como lista JSON, para que un Server
+ * Action las lea desde el FormData. Solo imágenes de hasta 5 MB.
  */
 export function ImageUploader({ bucket, name, multiple = false, maxFiles = 1 }: ImageUploaderProps) {
   const [urls, setUrls] = useState<string[]>([]);
@@ -25,18 +27,27 @@ export function ImageUploader({ bucket, name, multiple = false, maxFiles = 1 }: 
   async function manejarArchivos(files: FileList | null) {
     if (!files || files.length === 0) return;
     setError(null);
-    setSubiendo(true);
 
+    const elegidos = Array.from(files).slice(0, maxFiles - urls.length);
+    for (const file of elegidos) {
+      const motivo = validarArchivoImagen(file);
+      if (motivo) {
+        setError(motivo);
+        return;
+      }
+    }
+
+    setSubiendo(true);
+    const nuevasUrls: string[] = [];
     try {
       const supabase = createClient();
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      if (!user) throw new Error('Debes iniciar sesión para subir archivos.');
+      if (!user) throw new Error('Tu sesión expiró. Vuelve a iniciar sesión.');
 
-      const nuevasUrls: string[] = [];
-      for (const file of Array.from(files).slice(0, maxFiles - urls.length)) {
-        const ruta = `${user.id}/${Date.now()}-${file.name}`;
+      for (const file of elegidos) {
+        const ruta = `${user.id}/${Date.now()}-${nombreArchivoSeguro(file.name)}`;
         const { error: uploadError } = await supabase.storage.from(bucket).upload(ruta, file);
         if (uploadError) throw uploadError;
 
@@ -47,17 +58,28 @@ export function ImageUploader({ bucket, name, multiple = false, maxFiles = 1 }: 
           nuevasUrls.push(data.publicUrl);
         }
       }
-      setUrls((prev) => [...prev, ...nuevasUrls]);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al subir el archivo');
+      setError(mensajeError(err, 'No se pudo subir la imagen. Inténtalo de nuevo.'));
     } finally {
+      // lo que sí se alcanzó a subir se conserva aunque otro archivo falle
+      if (nuevasUrls.length > 0) setUrls((prev) => [...prev, ...nuevasUrls]);
       setSubiendo(false);
     }
   }
 
+  async function quitar(url: string) {
+    setUrls((prev) => prev.filter((u) => u !== url));
+    // Mejor esfuerzo: borra el archivo de los buckets públicos para no dejar fotos sueltas.
+    // (En comprobantes no hay política de borrado: queda para el administrador.)
+    if (bucket === 'comprobantes') return;
+    const marca = `/storage/v1/object/public/${bucket}/`;
+    const ruta = url.includes(marca) ? decodeURIComponent(url.split(marca)[1] ?? '') : '';
+    if (ruta) await createClient().storage.from(bucket).remove([ruta]);
+  }
+
   return (
     <div className="flex flex-col gap-2">
-      <input type="hidden" name={name} value={urls.join(',')} />
+      <input type="hidden" name={name} value={JSON.stringify(urls)} />
 
       <div className="flex flex-wrap gap-2">
         {urls.map((url) => (
@@ -73,7 +95,8 @@ export function ImageUploader({ bucket, name, multiple = false, maxFiles = 1 }: 
             )}
             <button
               type="button"
-              onClick={() => setUrls((prev) => prev.filter((u) => u !== url))}
+              onClick={() => quitar(url)}
+              aria-label="Quitar imagen"
               className="absolute right-0.5 top-0.5 rounded-full bg-black/60 p-0.5 text-white"
             >
               <X className="h-3 w-3" />
@@ -91,17 +114,24 @@ export function ImageUploader({ bucket, name, multiple = false, maxFiles = 1 }: 
             <span className="text-[10px]">Subir</span>
             <input
               type="file"
-              accept="image/*"
+              accept={TIPOS_IMAGEN_PERMITIDOS.join(',')}
               multiple={multiple}
               className="hidden"
-              onChange={(event) => manejarArchivos(event.target.files)}
+              onChange={(event) => {
+                void manejarArchivos(event.target.files);
+                event.target.value = '';
+              }}
               disabled={subiendo}
             />
           </label>
         )}
       </div>
 
-      {error && <p className="text-xs text-red-600">{error}</p>}
+      {error && (
+        <p role="alert" className="text-xs text-red-600">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

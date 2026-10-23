@@ -1,17 +1,17 @@
 'use client';
 
-import { useActionState } from 'react';
 import { CATEGORIAS } from '@emprende/core';
+import { useAccion } from '@/lib/useAccion';
 import { crearEmprendimientoAction } from '@/lib/actions/emprendimiento';
 import type { EstadoFormulario } from '@/lib/actions/auth';
 
 const estadoInicial: EstadoFormulario = {};
 
 export function EmprendimientoForm() {
-  const [estado, accion, enviando] = useActionState(crearEmprendimientoAction, estadoInicial);
+  const [estado, propsFormulario, enviando] = useAccion(crearEmprendimientoAction, estadoInicial);
 
   return (
-    <form action={accion} className="flex max-w-lg flex-col gap-4">
+    <form {...propsFormulario} className="flex max-w-lg flex-col gap-4">
       <div className="flex flex-col gap-1">
         <label htmlFor="nombre" className="text-sm font-medium text-neutral-700">
           Nombre del emprendimiento
@@ -72,7 +72,11 @@ export function EmprendimientoForm() {
         />
       </div>
 
-      {estado.error && <p className="text-sm text-red-600">{estado.error}</p>}
+      {estado.error && (
+        <p role="alert" className="text-sm text-red-600">
+          {estado.error}
+        </p>
+      )}
 
       <button
         type="submit"

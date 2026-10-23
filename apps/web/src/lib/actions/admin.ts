@@ -1,33 +1,36 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { revisarPagoSchema } from '@emprende/core';
-import { revisarPago } from '@emprende/db';
+import { mensajeError, primerError, validarPagoSchema } from '@emprende/core';
+import { validarPago } from '@emprende/db';
 import { createClient } from '@/lib/supabase/server';
+import type { EstadoFormulario } from './auth';
 
-export async function revisarPagoAction(formData: FormData) {
-  const resultado = revisarPagoSchema.safeParse({
-    pagoId: formData.get('pagoId'),
-    aprobar: formData.get('aprobar') === 'true',
-    motivoRechazo: formData.get('motivoRechazo') || undefined,
-  });
-  if (!resultado.success) return;
+/**
+ * Valida un pago pendiente. Quién puede hacerlo lo decide la base de datos
+ * (la función validar_pago exige rol 'admin'), no este código.
+ */
+export async function validarPagoAction(
+  _prev: EstadoFormulario,
+  formData: FormData,
+): Promise<EstadoFormulario> {
+  const resultado = validarPagoSchema.safeParse({ pagoId: formData.get('pagoId') });
+  if (!resultado.success) return { error: primerError(resultado.error) };
 
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return;
+  if (!user) return { error: 'Tu sesión expiró. Vuelve a iniciar sesión.' };
 
-  await revisarPago(
-    supabase,
-    resultado.data.pagoId,
-    user.id,
-    resultado.data.aprobar,
-    resultado.data.motivoRechazo,
-  );
+  try {
+    await validarPago(supabase, resultado.data.pagoId);
+  } catch (error) {
+    return { error: mensajeError(error, 'No se pudo validar el pago. Inténtalo de nuevo.') };
+  }
 
   revalidatePath('/admin');
+  return {};
 }
 
 /** Genera una URL firmada de corta duración para ver un comprobante privado. */

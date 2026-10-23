@@ -1,8 +1,10 @@
 import { redirect } from 'next/navigation';
 import { Navbar } from '@/components/Navbar';
+import { ValidarPagoBoton } from '@/components/ValidarPagoBoton';
 import { createClient } from '@/lib/supabase/server';
+import { formatearFecha, PRECIO_SUSCRIPCION_MENSUAL } from '@emprende/core';
 import { listarPagosPendientes } from '@emprende/db';
-import { revisarPagoAction, urlFirmadaComprobante } from '@/lib/actions/admin';
+import { urlFirmadaComprobante } from '@/lib/actions/admin';
 
 export default async function AdminPage() {
   const supabase = await createClient();
@@ -24,9 +26,13 @@ export default async function AdminPage() {
     <>
       <Navbar />
       <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-8">
-        <h1 className="mb-6 text-2xl font-bold text-neutral-900">
-          Pagos pendientes de revisión ({pagos.length})
+        <h1 className="mb-1 text-2xl font-bold text-neutral-900">
+          Pagos pendientes de validación ({pagos.length})
         </h1>
+        <p className="mb-6 text-sm text-neutral-500">
+          Revisa que el comprobante de Yape sea real y por S/ {PRECIO_SUSCRIPCION_MENSUAL}. Al
+          validarlo, el emprendimiento aparece en el catálogo por un mes más.
+        </p>
 
         <div className="flex flex-col gap-4">
           {pagos.length === 0 && (
@@ -53,10 +59,9 @@ export default async function AdminPage() {
                       {emprendimiento?.nombre ?? 'Emprendimiento'}
                     </p>
                     <p className="text-sm text-neutral-500">
-                      S/ {pago.monto_reportado} ·{' '}
-                      {new Date(pago.creado_en).toLocaleDateString('es-PE')}
+                      S/ {pago.monto_reportado} · {formatearFecha(pago.creado_en)}
                     </p>
-                    {urlComprobante && (
+                    {urlComprobante ? (
                       <a
                         href={urlComprobante}
                         target="_blank"
@@ -65,31 +70,12 @@ export default async function AdminPage() {
                       >
                         Ver comprobante
                       </a>
+                    ) : (
+                      <p className="text-sm text-red-600">No se pudo abrir el comprobante.</p>
                     )}
                   </div>
 
-                  <div className="flex gap-2">
-                    <form action={revisarPagoAction}>
-                      <input type="hidden" name="pagoId" value={pago.id} />
-                      <input type="hidden" name="aprobar" value="true" />
-                      <button
-                        type="submit"
-                        className="rounded-full bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700"
-                      >
-                        Aprobar
-                      </button>
-                    </form>
-                    <form action={revisarPagoAction}>
-                      <input type="hidden" name="pagoId" value={pago.id} />
-                      <input type="hidden" name="aprobar" value="false" />
-                      <button
-                        type="submit"
-                        className="rounded-full border border-red-300 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-50"
-                      >
-                        Rechazar
-                      </button>
-                    </form>
-                  </div>
+                  <ValidarPagoBoton pagoId={pago.id} />
                 </div>
               );
             }),

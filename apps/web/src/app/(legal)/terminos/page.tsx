@@ -5,11 +5,11 @@ import { DOMINIO_INSTITUCIONAL, PRECIO_SUSCRIPCION_MENSUAL } from '@emprende/cor
 
 export const metadata: Metadata = {
   title: 'Términos y Condiciones',
-  description: 'Reglas de uso de Emprende UNJBG para emprendedores y consumidores.',
+  description: 'Reglas de uso de MarketJBG para emprendedores y consumidores.',
 };
 
-const ULTIMA_ACTUALIZACION = '17 de septiembre de 2026';
-const CORREO_CONTACTO = 'soporte@emprendeunjbg.com';
+const ULTIMA_ACTUALIZACION = '15 de octubre de 2026';
+const CORREO_CONTACTO = 'soporte@marketjbg.com';
 
 export default function TerminosPage() {
   return (
@@ -21,27 +21,17 @@ export default function TerminosPage() {
           Última actualización: {ULTIMA_ACTUALIZACION}
         </p>
 
-        <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-          <strong>Nota para el equipo del proyecto:</strong> revisa estos términos junto con la{' '}
-          <a href="/privacidad" className="underline">
-            Política de Privacidad
-          </a>{' '}
-          antes de publicarlos. Reemplaza <code>{CORREO_CONTACTO}</code> por un correo real y
-          confirma con la universidad si la Plataforma se presenta como un proyecto estudiantil
-          independiente o como un servicio institucional de la UNJBG.
-        </div>
-
         <Seccion titulo="1. Aceptación de los términos">
           <p>
-            Al crear una cuenta o usar Emprende UNJBG (la &quot;Plataforma&quot;), aceptas estos
+            Al crear una cuenta o usar MarketJBG (la &quot;Plataforma&quot;), aceptas estos
             Términos y Condiciones y la Política de Privacidad. Si no estás de acuerdo, no uses
             la Plataforma.
           </p>
         </Seccion>
 
-        <Seccion titulo="2. Qué es Emprende UNJBG">
+        <Seccion titulo="2. Qué es MarketJBG">
           <p>
-            Emprende UNJBG es un catálogo digital que conecta a estudiantes emprendedores de la
+            MarketJBG es un catálogo digital que conecta a estudiantes emprendedores de la
             Universidad Nacional Jorge Basadre Grohmann con consumidores dentro de la comunidad
             universitaria. La Plataforma <strong>no vende productos directamente</strong>, no
             procesa pagos de compras y no participa en la entrega ni en la calidad de los
@@ -82,15 +72,16 @@ export default function TerminosPage() {
             </li>
             <li>
               La validación del pago es <strong>manual</strong>: un administrador revisa el
-              comprobante y aprueba o rechaza la activación en un plazo razonable (normalmente
-              dentro de 24 horas hábiles).
+              comprobante y, si es correcto, lo valida y activa tu emprendimiento durante un mes
+              (normalmente dentro de 24 horas hábiles). Mientras no esté validado, el pago figura
+              como pendiente.
             </li>
             <li>
               La suscripción no se renueva automáticamente ni se cobra de forma recurrente sin
               tu intervención: cada periodo requiere que reportes un nuevo pago.
             </li>
             <li>
-              Los pagos ya reportados y aprobados no son reembolsables, salvo error atribuible a
+              Los pagos ya validados no son reembolsables, salvo error atribuible a
               la Plataforma.
             </li>
           </ul>
@@ -120,7 +111,7 @@ export default function TerminosPage() {
         <Seccion titulo="6. Transacciones entre usuarios">
           <p>
             La compra y venta de productos ocurre <strong>fuera de la Plataforma</strong>,
-            directamente entre el emprendedor y el consumidor. Emprende UNJBG no es parte de esa
+            directamente entre el emprendedor y el consumidor. MarketJBG no es parte de esa
             transacción, no garantiza la calidad, legalidad, seguridad o entrega de los
             productos, y no media disputas de pago o reembolso entre usuarios. Cualquier
             desacuerdo debe resolverse directamente entre las partes.
@@ -131,7 +122,7 @@ export default function TerminosPage() {
           <p>
             Conservas los derechos sobre el contenido que publicas (fotos, descripciones), pero
             nos otorgas una licencia no exclusiva para mostrarlo dentro del catálogo de la
-            Plataforma. El nombre, el logo y el diseño de Emprende UNJBG pertenecen al equipo del
+            Plataforma. El nombre, el logo y el diseño de MarketJBG pertenecen al equipo del
             proyecto y no pueden usarse sin autorización.
           </p>
         </Seccion>

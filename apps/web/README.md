@@ -1,4 +1,4 @@
-# apps/web — Emprende UNJBG (Next.js)
+# apps/web — MarketJBG (Next.js)
 
 App web del catálogo. Ver la documentación completa del monorepo en el
 [README de la raíz](../../README.md).

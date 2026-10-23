@@ -1,13 +1,16 @@
-'use client';
-
 import Link from 'next/link';
-import { useActionState } from 'react';
-import { iniciarSesion, type EstadoFormulario } from '@/lib/actions/auth';
+import { LoginForm } from '@/components/LoginForm';
+import { rutaInterna } from '@/lib/rutas';
 
-const estadoInicial: EstadoFormulario = {};
-
-export default function LoginPage() {
-  const [estado, accion, enviando] = useActionState(iniciarSesion, estadoInicial);
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const params = await searchParams;
+  const next = rutaInterna(typeof params.next === 'string' ? params.next : null);
+  const recienRegistrado = params.registrado === '1';
+  const falloConfirmacion = params.error === 'confirmacion';
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-sm flex-col justify-center gap-6 px-4">
@@ -16,44 +19,19 @@ export default function LoginPage() {
         <p className="mt-1 text-sm text-neutral-500">Usa tu correo institucional UNJBG</p>
       </div>
 
-      <form action={accion} className="flex flex-col gap-4">
-        <div className="flex flex-col gap-1">
-          <label htmlFor="email" className="text-sm font-medium text-neutral-700">
-            Correo institucional
-          </label>
-          <input
-            id="email"
-            name="email"
-            type="email"
-            required
-            placeholder="tunombre@unjbg.edu.pe"
-            className="rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100"
-          />
-        </div>
+      {recienRegistrado && (
+        <p role="status" className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-800">
+          Te enviamos un correo para confirmar tu cuenta. Ábrelo, confirma y luego ingresa aquí.
+        </p>
+      )}
+      {falloConfirmacion && (
+        <p role="alert" className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+          No pudimos confirmar tu correo; el enlace pudo vencer. Si ya lo confirmaste, ingresa; si no,
+          vuelve a registrarte.
+        </p>
+      )}
 
-        <div className="flex flex-col gap-1">
-          <label htmlFor="password" className="text-sm font-medium text-neutral-700">
-            Contraseña
-          </label>
-          <input
-            id="password"
-            name="password"
-            type="password"
-            required
-            className="rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100"
-          />
-        </div>
-
-        {estado.error && <p className="text-sm text-red-600">{estado.error}</p>}
-
-        <button
-          type="submit"
-          disabled={enviando}
-          className="rounded-full bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60"
-        >
-          {enviando ? 'Ingresando…' : 'Ingresar'}
-        </button>
-      </form>
+      <LoginForm next={next} />
 
       <p className="text-center text-sm text-neutral-500">
         ¿No tienes cuenta?{' '}

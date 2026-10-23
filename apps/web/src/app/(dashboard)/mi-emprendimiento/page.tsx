@@ -4,6 +4,7 @@ import { PlusCircle } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { EmprendimientoForm } from '@/components/EmprendimientoForm';
 import { createClient } from '@/lib/supabase/server';
+import { estadoEfectivo, formatearFecha } from '@emprende/core';
 import { obtenerMiEmprendimiento } from '@emprende/db';
 
 const ETIQUETAS_ESTADO: Record<string, { texto: string; clase: string }> = {
@@ -21,6 +22,10 @@ export default async function MiEmprendimientoPage() {
   if (!user) redirect('/login?next=/mi-emprendimiento');
 
   const emprendimiento = await obtenerMiEmprendimiento(supabase, user.id);
+  // Un negocio 'activo' cuya suscripción ya terminó se muestra (y se trata) como vencido.
+  const estado = emprendimiento
+    ? estadoEfectivo(emprendimiento.estado, emprendimiento.activo_hasta)
+    : null;
 
   return (
     <>
@@ -44,11 +49,16 @@ export default async function MiEmprendimientoPage() {
                 <h1 className="text-2xl font-bold text-neutral-900">{emprendimiento.nombre}</h1>
                 <span
                   className={`mt-1 inline-block rounded-full px-3 py-0.5 text-xs font-medium ${
-                    ETIQUETAS_ESTADO[emprendimiento.estado]?.clase ?? ''
+                    ETIQUETAS_ESTADO[estado ?? 'pendiente']?.clase ?? ''
                   }`}
                 >
-                  {ETIQUETAS_ESTADO[emprendimiento.estado]?.texto ?? emprendimiento.estado}
+                  {ETIQUETAS_ESTADO[estado ?? 'pendiente']?.texto ?? estado}
                 </span>
+                {estado === 'activo' && (
+                  <span className="ml-2 text-xs text-neutral-500">
+                    Suscripción vigente hasta el {formatearFecha(emprendimiento.activo_hasta)}
+                  </span>
+                )}
               </div>
               <div className="flex gap-2">
                 <Link
@@ -73,14 +83,22 @@ export default async function MiEmprendimientoPage() {
               </div>
             </div>
 
-            {emprendimiento.estado !== 'activo' && (
+            {estado === 'suspendido' && (
+              <p className="mb-6 rounded-lg border border-neutral-300 bg-neutral-100 p-4 text-sm text-neutral-700">
+                Tu emprendimiento está suspendido y no aparece en el catálogo. Escríbenos para revisar
+                tu caso.
+              </p>
+            )}
+            {(estado === 'pendiente' || estado === 'vencido') && (
               <p className="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-                Tu emprendimiento aún no aparece en el catálogo público. Reporta tu pago de
-                suscripción por Yape en la sección{' '}
+                {estado === 'vencido'
+                  ? 'Tu suscripción venció y tu emprendimiento ya no aparece en el catálogo público. '
+                  : 'Tu emprendimiento aún no aparece en el catálogo público. '}
+                Reporta tu pago de suscripción por Yape en la sección{' '}
                 <Link href="/mi-emprendimiento/suscripcion" className="font-semibold underline">
                   Suscripción
                 </Link>{' '}
-                para activarlo.
+                y un administrador lo validará.
               </p>
             )}
 

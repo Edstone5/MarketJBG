@@ -5,10 +5,10 @@ import { Footer } from '@/components/Footer';
 
 export const metadata: Metadata = {
   title: 'Eliminar mi cuenta',
-  description: 'Cómo solicitar la eliminación de tu cuenta y tus datos en Emprende UNJBG.',
+  description: 'Cómo solicitar la eliminación de tu cuenta y tus datos en MarketJBG.',
 };
 
-const CORREO_CONTACTO = 'privacidad@emprendeunjbg.com';
+const CORREO_CONTACTO = 'privacidad@marketjbg.com';
 
 export default function EliminarCuentaPage() {
   return (
@@ -17,7 +17,7 @@ export default function EliminarCuentaPage() {
       <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-10">
         <h1 className="text-3xl font-bold text-neutral-900">Eliminar mi cuenta y mis datos</h1>
         <p className="mt-3 text-sm leading-relaxed text-neutral-600">
-          Puedes eliminar tu cuenta de Emprende UNJBG y todos los datos personales asociados en
+          Puedes eliminar tu cuenta de MarketJBG y todos los datos personales asociados en
           cualquier momento, de dos maneras:
         </p>
 

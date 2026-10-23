@@ -15,9 +15,9 @@ export default async function HomePage() {
   try {
     const data = await listarProductosCatalogo(supabase, { ordenarPor: 'recientes' });
     productos = (data ?? []).slice(0, 8) as unknown as ProductoCatalogo[];
-  } catch {
-    // Supabase aún no está configurado en este entorno: la página igual
-    // debe renderizar el resto del catálogo vacío en vez de romperse.
+  } catch (error) {
+    // Si falla la consulta, la página igual debe mostrarse (sin productos) en vez de romperse.
+    console.error('No se pudo cargar el catálogo en el inicio', error);
     productos = [];
   }
 
@@ -55,7 +55,7 @@ export default async function HomePage() {
             {
               icon: ShieldCheck,
               titulo: 'Estudiantes verificados',
-              texto: 'Cada perfil se crea con correo institucional @unjbg.edu.pe.',
+              texto: 'Solo se registran personas con correo institucional @unjbg.edu.pe confirmado.',
             },
             {
               icon: Smartphone,
@@ -94,8 +94,7 @@ export default async function HomePage() {
             </div>
           ) : (
             <p className="rounded-2xl border border-dashed border-neutral-300 p-8 text-center text-sm text-neutral-500">
-              Todavía no hay productos publicados. Conecta el proyecto a Supabase (ver
-              apps/web/.env.example) y sé el primer emprendimiento del catálogo.
+              Todavía no hay productos publicados. ¡Sé el primer emprendimiento del catálogo!
             </p>
           )}
         </section>

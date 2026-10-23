@@ -5,11 +5,11 @@ import { Footer } from '@/components/Footer';
 export const metadata: Metadata = {
   title: 'Política de Privacidad',
   description:
-    'Cómo Emprende UNJBG recopila, usa y protege los datos personales de estudiantes emprendedores y consumidores.',
+    'Cómo MarketJBG recopila, usa y protege los datos personales de estudiantes emprendedores y consumidores.',
 };
 
-const ULTIMA_ACTUALIZACION = '17 de septiembre de 2026';
-const CORREO_CONTACTO = 'privacidad@emprendeunjbg.com';
+const ULTIMA_ACTUALIZACION = '15 de octubre de 2026';
+const CORREO_CONTACTO = 'privacidad@marketjbg.com';
 
 export default function PrivacidadPage() {
   return (
@@ -21,19 +21,9 @@ export default function PrivacidadPage() {
           Última actualización: {ULTIMA_ACTUALIZACION}
         </p>
 
-        <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-          <strong>Nota para el equipo del proyecto:</strong> esta política es una plantilla
-          redactada para el alcance funcional actual de la plataforma. Antes de publicarla en
-          producción o de enviarla a Google Play / App Store, complétala con la razón social o
-          responsable legal del tratamiento (¿el equipo del taller, una asociación de
-          estudiantes, o la propia UNJBG?), reemplaza <code>{CORREO_CONTACTO}</code> por un
-          correo real que el equipo revise, y pide una validación de un asesor legal o de la
-          oficina de la UNJBG competente en protección de datos.
-        </div>
-
         <Seccion titulo="1. Quiénes somos">
           <p>
-            Emprende UNJBG es una plataforma desarrollada por estudiantes de Ingeniería de
+            MarketJBG es una plataforma desarrollada por estudiantes de Ingeniería de
             Sistemas de la Universidad Nacional Jorge Basadre Grohmann (UNJBG), en el marco del
             curso Taller de Emprendimiento, que funciona como catálogo de emprendimientos
             estudiantiles. Esta política explica qué datos personales recopilamos a través de
@@ -73,8 +63,8 @@ export default function PrivacidadPage() {
             </li>
             <li>
               <strong>Datos técnicos básicos:</strong> información estándar de uso de la app
-              (por ejemplo, fecha de creación de publicaciones, contador de vistas de un
-              producto) necesaria para el funcionamiento del catálogo.
+              (por ejemplo, la fecha de creación de tus publicaciones y de tus pagos) necesaria
+              para el funcionamiento del catálogo.
             </li>
           </ul>
           <p>
@@ -112,11 +102,11 @@ export default function PrivacidadPage() {
         <Seccion titulo="5. Con quién compartimos tus datos">
           <p>
             Tu perfil comercial y tus productos son <strong>públicos</strong> dentro del
-            catálogo: cualquier persona que visite la Plataforma puede verlos. Tu número de
-            WhatsApp solo se muestra como enlace de contacto directo, no como texto plano
-            visible para bots de scraping automatizado (aunque no podemos garantizar al 100%
-            que un tercero no lo copie manualmente, como ocurre con cualquier directorio
-            público).
+            catálogo: cualquier persona que visite la Plataforma puede verlos mientras tu
+            suscripción esté vigente. Tu número de WhatsApp también es público: se muestra como
+            botón de contacto en cada publicación y cualquiera puede copiarlo, como ocurre con
+            cualquier directorio público. Si no quieres que tu número sea público, no crees un
+            perfil comercial.
           </p>
           <p>Compartimos datos con los siguientes proveedores, únicamente para operar la Plataforma:</p>
           <ul className="list-disc space-y-1 pl-5">
@@ -169,15 +159,16 @@ export default function PrivacidadPage() {
             tus datos cuando la ley lo permita.
           </p>
           <p>
-            Puedes ejercer estos derechos directamente desde la app (editando o eliminando tu
-            perfil, tus productos o tu cuenta) o escribiéndonos a{' '}
+            Puedes eliminar tu cuenta y todos tus datos directamente desde la app (en «Mi cuenta»
+            de la web o en la pestaña «Perfil» de la app móvil). Para rectificar tus datos, o para
+            editar o retirar un producto o tu perfil comercial sin borrar la cuenta, escríbenos a{' '}
             <a href={`mailto:${CORREO_CONTACTO}`} className="text-primary-700 underline">
               {CORREO_CONTACTO}
             </a>
             . Responderemos tu solicitud dentro de los plazos que establece la ley. Para
             eliminar tu cuenta y todos tus datos, visita{' '}
             <a href="/eliminar-cuenta" className="text-primary-700 underline">
-              emprendeunjbg.com/eliminar-cuenta
+              marketjbg.com/eliminar-cuenta
             </a>
             .
           </p>
