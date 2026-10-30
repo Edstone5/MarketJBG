@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
-import { MessageCircle } from 'lucide-react';
 import { CATEGORIAS } from '@emprende/core';
 import { obtenerEmprendimientoPorId } from '@emprende/db';
+import { BotonWhatsApp } from '@/components/BotonWhatsApp';
 import { Navbar } from '@/components/Navbar';
+import { RegistrarVisita } from '@/components/RegistrarVisita';
 import { Footer } from '@/components/Footer';
 import { ProductCard, type ProductoCatalogo } from '@/components/ProductCard';
 import { createClient } from '@/lib/supabase/server';
@@ -44,6 +45,7 @@ export default async function EmprendimientoPage({ params }: { params: Promise<{
   return (
     <>
       <Navbar />
+      <RegistrarVisita tipo="perfil" emprendimientoId={emprendimiento.id} />
       <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-8 px-4 py-8">
         <section className="flex flex-col gap-4 rounded-2xl border border-neutral-100 bg-white p-6 shadow-sm sm:flex-row sm:items-center">
           <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-full bg-neutral-100">
@@ -56,15 +58,13 @@ export default async function EmprendimientoPage({ params }: { params: Promise<{
             {categoria && <p className="text-sm text-primary-700">{categoria.nombre}</p>}
             <p className="whitespace-pre-line text-sm text-neutral-600">{emprendimiento.descripcion}</p>
           </div>
-          <a
+          <BotonWhatsApp
             href={linkWhatsapp}
-            target="_blank"
-            rel="noreferrer"
+            emprendimientoId={emprendimiento.id}
             className="flex items-center justify-center gap-2 rounded-full bg-green-600 px-5 py-3 text-sm font-semibold text-white hover:bg-green-700"
           >
-            <MessageCircle className="h-5 w-5" aria-hidden />
             Contactar por WhatsApp
-          </a>
+          </BotonWhatsApp>
         </section>
 
         <section className="flex flex-col gap-4">

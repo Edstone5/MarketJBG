@@ -31,6 +31,10 @@ export default function RootLayout() {
           options={{ headerShown: true, title: 'Editar perfil comercial' }}
         />
         <Stack.Screen
+          name="negocio/estadisticas"
+          options={{ headerShown: true, title: 'Estadísticas' }}
+        />
+        <Stack.Screen
           name="negocio/suscripcion"
           options={{ headerShown: true, title: 'Suscripción' }}
         />

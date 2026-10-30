@@ -66,6 +66,14 @@ export default function PrivacidadPage() {
               (por ejemplo, la fecha de creación de tus publicaciones y de tus pagos) necesaria
               para el funcionamiento del catálogo.
             </li>
+            <li>
+              <strong>Visitas a los emprendimientos:</strong> cuando alguien abre el perfil o
+              una publicación de un negocio, o toca «Contactar por WhatsApp», guardamos solo el
+              tipo de visita, el negocio, la fecha y la hora. Para no contar dos veces la misma
+              visita seguida usamos un código aleatorio guardado en el navegador o en la app,
+              que no está ligado a una cuenta, a un nombre ni a una dirección IP. Las visitas del
+              propio dueño a su negocio no se cuentan.
+            </li>
           </ul>
           <p>
             No recopilamos datos de tarjetas de crédito o débito, ni datos bancarios: la
@@ -80,6 +88,11 @@ export default function PrivacidadPage() {
             <li>
               Permitir que otros estudiantes te contacten por WhatsApp cuando publicas un
               producto.
+            </li>
+            <li>
+              Mostrarte las estadísticas de tu negocio (visitas, hora de mayor actividad y
+              publicaciones más vistas) y permitirte descargar un reporte. Solo tú y el equipo
+              administrador pueden verlas.
             </li>
             <li>Validar manualmente el pago de tu suscripción y activar tu visibilidad en el catálogo.</li>
             <li>Moderar contenido que incumpla nuestros Términos y Condiciones.</li>

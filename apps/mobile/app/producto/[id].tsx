@@ -3,8 +3,9 @@ import { Linking, Pressable, SafeAreaView, ScrollView, Text, View } from 'react-
 import { Image } from 'expo-image';
 import { useLocalSearchParams } from 'expo-router';
 import { BadgeCheck, MessageCircle } from 'lucide-react-native';
-import { obtenerProductoPorId } from '@emprende/db';
+import { obtenerProductoPorId, registrarVisita } from '@emprende/db';
 import { supabase } from '@/lib/supabase';
+import { obtenerVisitante } from '@/lib/visitante';
 
 const formatoPEN = new Intl.NumberFormat('es-PE', { style: 'currency', currency: 'PEN' });
 
@@ -25,6 +26,19 @@ export default function ProductoScreen() {
       });
   }, [id]);
 
+  // RF09: cuenta la visita a esta publicación (la base de datos decide si suma; una falla aquí se ignora).
+  const emprendimientoId = (producto?.emprendimiento as unknown as { id: string } | null)?.id;
+  const productoId = producto?.id;
+  useEffect(() => {
+    if (!emprendimientoId || !productoId) return;
+    registrarVisita(supabase, {
+      emprendimientoId,
+      productoId,
+      tipo: 'producto',
+      visitante: obtenerVisitante(),
+    }).catch(() => {});
+  }, [emprendimientoId, productoId]);
+
   if (!producto) {
     return (
       <SafeAreaView className="flex-1 items-center justify-center bg-white">
@@ -36,12 +50,19 @@ export default function ProductoScreen() {
   }
 
   const emprendimiento = producto.emprendimiento as unknown as {
+    id: string;
     nombre: string;
     whatsapp: string;
   } | null;
 
   function contactar() {
     if (!emprendimiento) return;
+    registrarVisita(supabase, {
+      emprendimientoId: emprendimiento.id,
+      productoId: producto?.id,
+      tipo: 'contacto',
+      visitante: obtenerVisitante(),
+    }).catch(() => {});
     const numero = emprendimiento.whatsapp.replace(/\D/g, '');
     const mensaje = encodeURIComponent(
       `Hola, vi "${producto?.nombre}" en MarketJBG y me interesa 🙂`,

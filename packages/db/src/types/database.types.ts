@@ -1,6 +1,6 @@
 /**
  * Tipos de la base de datos, escritos a mano para reflejar
- * supabase/migrations/*.sql (0001 a 0005).
+ * supabase/migrations/*.sql (0001 a 0006).
  *
  * En cuanto el proyecto tenga una instancia real de Supabase, reemplaza
  * este archivo generándolo automáticamente con:
@@ -11,6 +11,7 @@ export type Rol = 'consumidor' | 'emprendedor' | 'admin';
 export type EstadoEmprendimiento = 'activo' | 'pendiente' | 'vencido' | 'suspendido';
 export type EstadoPago = 'pendiente' | 'validado';
 export type TipoProducto = 'producto' | 'servicio';
+export type TipoVisita = 'perfil' | 'producto' | 'contacto';
 
 export interface Database {
   public: {
@@ -20,6 +21,21 @@ export interface Database {
       validar_pago: {
         Args: { p_pago_id: string };
         Returns: Database['public']['Tables']['pagos']['Row'];
+      };
+      /** Cuenta una visita (cualquiera, también sin cuenta). Devuelve si se contó. */
+      registrar_visita: {
+        Args: {
+          p_emprendimiento_id: string;
+          p_tipo: TipoVisita;
+          p_producto_id?: string | null;
+          p_visitante?: string | null;
+        };
+        Returns: boolean;
+      };
+      /** Estadísticas de un emprendimiento (solo su dueño o un administrador). Ver `estadisticasSchema` en core. */
+      estadisticas_emprendimiento: {
+        Args: { p_emprendimiento_id: string; p_dias?: number };
+        Returns: unknown;
       };
     };
     Enums: Record<string, never>;
@@ -64,7 +80,6 @@ export interface Database {
           logo_url: string | null;
           whatsapp: string;
           estado: EstadoEmprendimiento;
-          vistas: number;
           /** Fin de la suscripción vigente; sin ella (o vencida) el negocio no es público. */
           activo_hasta: string | null;
           creado_en: string;
@@ -78,7 +93,6 @@ export interface Database {
           logo_url?: string | null;
           whatsapp: string;
           estado?: EstadoEmprendimiento;
-          vistas?: number;
           activo_hasta?: string | null;
         };
         Update: Partial<Database['public']['Tables']['emprendimientos']['Insert']>;
@@ -172,6 +186,35 @@ export interface Database {
             columns: ['emprendimiento_id'];
             isOneToOne: false;
             referencedRelation: 'emprendimientos';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      /** Solo se escribe con `registrar_visita()`; el dueño y el administrador la leen. */
+      visitas: {
+        Row: {
+          id: number;
+          emprendimiento_id: string;
+          producto_id: string | null;
+          tipo: TipoVisita;
+          visitante: string | null;
+          visitado_en: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [
+          {
+            foreignKeyName: 'visitas_emprendimiento_id_fkey';
+            columns: ['emprendimiento_id'];
+            isOneToOne: false;
+            referencedRelation: 'emprendimientos';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'visitas_producto_id_fkey';
+            columns: ['producto_id'];
+            isOneToOne: false;
+            referencedRelation: 'productos';
             referencedColumns: ['id'];
           },
         ];

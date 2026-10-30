@@ -61,7 +61,7 @@ export default async function MiEmprendimientoPage() {
                   </span>
                 )}
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <Link
                   href="/mi-emprendimiento/editar"
                   className="rounded-full border border-neutral-300 px-4 py-2 text-sm font-medium hover:border-primary-500"
@@ -73,6 +73,12 @@ export default async function MiEmprendimientoPage() {
                   className="rounded-full border border-neutral-300 px-4 py-2 text-sm font-medium hover:border-primary-500"
                 >
                   Mi cuenta
+                </Link>
+                <Link
+                  href="/mi-emprendimiento/estadisticas"
+                  className="rounded-full border border-neutral-300 px-4 py-2 text-sm font-medium hover:border-primary-500"
+                >
+                  Estadísticas
                 </Link>
                 <Link
                   href="/mi-emprendimiento/suscripcion"

@@ -15,7 +15,6 @@ export const emprendimientoSchema = z.object({
     z.string().regex(/^\+?[0-9]{9,15}$/, 'Número de WhatsApp inválido'),
   ),
   estado: z.enum(ESTADOS_EMPRENDIMIENTO).default('pendiente'),
-  vistas: z.number().int().nonnegative().default(0),
   creadoEn: z.string().datetime().optional(),
 });
 

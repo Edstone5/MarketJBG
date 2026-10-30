@@ -149,3 +149,93 @@ describe('archivos', () => {
     assert.equal(core.rutaDeFoto(`${base}/../otro/a.png`, 'productos'), null);
   });
 });
+
+describe('estadísticas (RF09)', () => {
+  const idProducto = '00000000-0000-4000-8000-000000000201';
+  const ejemplo = () => ({
+    desde: '2026-10-24',
+    hasta: '2026-10-30',
+    dias: 7,
+    visitas_perfil: 4,
+    visitas_productos: 10,
+    contactos: 3,
+    por_dia: [
+      { dia: '2026-10-29', visitas: 6, contactos: 1 },
+      { dia: '2026-10-30', visitas: 8, contactos: 2 },
+    ],
+    por_hora: Array.from({ length: 24 }, (_, hora) => ({ hora, visitas: hora === 13 ? 9 : 0 })),
+    hora_pico: 13,
+    productos: [
+      { producto_id: idProducto, nombre: 'Brownies "gigantes"', visitas: 7, contactos: 2 },
+      { producto_id: idProducto, nombre: '=SUMA(1+1)', visitas: 3, contactos: 1 },
+    ],
+  });
+
+  test('el esquema acepta lo que devuelve la base de datos y rechaza lo que no es', () => {
+    assert.equal(core.estadisticasSchema.safeParse(ejemplo()).success, true);
+    assert.equal(core.estadisticasSchema.safeParse({ ...ejemplo(), hora_pico: null }).success, true);
+    assert.equal(core.estadisticasSchema.safeParse({ ...ejemplo(), hora_pico: 24 }).success, false);
+    assert.equal(core.estadisticasSchema.safeParse({ ...ejemplo(), contactos: -1 }).success, false);
+    assert.equal(core.estadisticasSchema.safeParse({ ...ejemplo(), por_dia: undefined }).success, false);
+  });
+
+  test('periodoEstadisticas: solo 7, 30 o 90 días; lo demás vuelve a 30', () => {
+    assert.equal(core.periodoEstadisticas('7'), 7);
+    assert.equal(core.periodoEstadisticas(['90', '7']), 90);
+    assert.equal(core.periodoEstadisticas('15'), 30);
+    assert.equal(core.periodoEstadisticas('abc'), 30);
+    assert.equal(core.periodoEstadisticas(undefined), 30);
+    assert.equal(core.periodoEstadisticas('99999'), 30);
+  });
+
+  test('totales y tasa de contacto', () => {
+    const e = ejemplo();
+    assert.equal(core.totalVisitas(e), 14);
+    assert.equal(core.tasaDeContacto(e), 30);
+    assert.equal(core.tasaDeContacto({ visitas_productos: 0, contactos: 5 }), 0);
+  });
+
+  test('etiquetas de hora y de día', () => {
+    assert.equal(core.etiquetaHora(0), '00:00 – 01:00');
+    assert.equal(core.etiquetaHora(13), '13:00 – 14:00');
+    assert.equal(core.etiquetaHora(23), '23:00 – 00:00');
+    assert.equal(core.formatearDia('2026-10-24'), '24/10/2026');
+  });
+
+  test('reporteCsv: BOM, secciones, comillas escapadas y fórmulas neutralizadas', () => {
+    const csv = core.reporteCsv('Dulces Basadrinos', ejemplo(), new Date('2026-10-30T15:00:00Z'));
+    assert.ok(csv.startsWith('﻿"Reporte de estadísticas · MarketJBG"'));
+    assert.ok(csv.endsWith('\r\n'));
+    assert.match(csv, /"Emprendimiento","Dulces Basadrinos"/);
+    assert.match(csv, /"Periodo","24\/10\/2026 al 30\/10\/2026 \(7 días, hora de Perú\)"/);
+    assert.match(csv, /"Visitas totales","14"/);
+    assert.match(csv, /"Hora de mayor actividad","13:00 – 14:00"/);
+    assert.match(csv, /"29\/10\/2026","6","1"/);
+    assert.match(csv, /"13:00 – 14:00","9"/);
+    // comillas dobles duplicadas
+    assert.match(csv, /"Brownies ""gigantes""","7","2"/);
+    // una celda que empieza con = no se ejecuta como fórmula
+    assert.match(csv, /"'=SUMA\(1\+1\)","3","1"/);
+    assert.ok(!/(^|,)"=SUMA/m.test(csv));
+    // 24 filas de horas
+    assert.equal((csv.match(/"\d\d:00 – \d\d:00","\d+"/g) ?? []).length, 24);
+  });
+
+  test('reporteCsv sin visitas: dice «Sin visitas» en lugar de dejar vacío', () => {
+    const vacio = { ...ejemplo(), visitas_perfil: 0, visitas_productos: 0, contactos: 0, hora_pico: null, productos: [] };
+    const csv = core.reporteCsv('Negocio', vacio);
+    assert.match(csv, /"Hora de mayor actividad","Sin visitas"/);
+    assert.match(csv, /"Sin visitas a publicaciones en este periodo"/);
+  });
+
+  test('reporteTexto: resumen corto para compartir', () => {
+    const texto = core.reporteTexto('Dulces Basadrinos', ejemplo());
+    assert.match(texto, /^Estadísticas de Dulces Basadrinos · MarketJBG/);
+    assert.match(texto, /Visitas totales: 14/);
+    assert.match(texto, /Hora de mayor actividad: 13:00 – 14:00/);
+    assert.match(texto, /1\. Brownies "gigantes": 7 visitas, 2 clics/);
+    const sinVisitas = core.reporteTexto('X', { ...ejemplo(), hora_pico: null, productos: [] });
+    assert.match(sinVisitas, /sin visitas/);
+    assert.ok(!/más vistas/.test(sinVisitas));
+  });
+});

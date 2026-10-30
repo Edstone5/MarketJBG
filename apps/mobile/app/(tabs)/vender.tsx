@@ -144,8 +144,13 @@ export default function VenderScreen() {
             </View>
           )}
 
-          <View className="flex-row gap-2">
+          <View className="flex-row flex-wrap gap-2">
             <Button texto="Editar perfil" variante="secundario" onPress={() => router.push('/negocio/perfil')} />
+            <Button
+              texto="Estadísticas"
+              variante="secundario"
+              onPress={() => router.push('/negocio/estadisticas')}
+            />
             <Button
               texto="Suscripción"
               variante="secundario"

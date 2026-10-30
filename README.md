@@ -170,7 +170,7 @@ Auth (lo que en cascada borra su perfil, emprendimiento, productos y pagos).
 | `pnpm build` | Build de producción de todo el monorepo |
 | `pnpm lint` | Lint de todos los paquetes |
 | `pnpm typecheck` | Chequeo de tipos de todo el monorepo |
-| `pnpm test` | Pruebas de seguridad de la base de datos (carga las migraciones en un Postgres en memoria; no necesita Supabase) |
+| `pnpm test` | Pruebas de la base de datos (cargan las migraciones en un Postgres en memoria; no necesita Supabase) y del paquete `core` |
 | `pnpm format` | Formatea con Prettier |
 
 ## Modelo de datos
@@ -182,6 +182,8 @@ distinguidos por la columna `tipo` — `categorias` y `pagos` (registro de suscr
 comprobante Yape, sección 2.7 del documento base del proyecto). Las políticas de seguridad por
 fila están en [`0002_rls.sql`](supabase/migrations/0002_rls.sql) y se endurecen en
 [`0005_seguridad_y_dos_estados_de_pago.sql`](supabase/migrations/0005_seguridad_y_dos_estados_de_pago.sql).
+La tabla `visitas` y las estadísticas llegan con
+[`0006_estadisticas_visitas.sql`](supabase/migrations/0006_estadisticas_visitas.sql).
 
 **Suscripción.** Un pago solo tiene dos estados: `pendiente` (lo reporta el emprendedor con su
 captura de Yape) y `validado` (lo valida un administrador con la función `validar_pago`, que en una
@@ -189,6 +191,15 @@ sola transacción activa el emprendimiento por un mes: `emprendimientos.activo_h
 público solo muestra negocios `activo` con `activo_hasta` en el futuro; esa regla la aplica la base
 de datos, no solo la pantalla. El dueño no puede cambiar su `estado`, su vigencia ni su `rol`, ni
 crear pagos ya validados: lo comprueban las pruebas de `supabase/tests/`.
+
+**Estadísticas (RF09).** Cada visita al perfil de un negocio, a una publicación o el clic en
+«Contactar por WhatsApp» se guarda en `visitas`, y solo la función `registrar_visita` puede
+escribirla: no cuenta lo que el público no ve (negocios pendientes, vencidos o suspendidos), ni las
+visitas del propio dueño, ni la misma visita repetida en 30 minutos. `estadisticas_emprendimiento`
+devuelve los totales, las visitas por día y por hora (la hora pico, en hora de Perú) y las
+publicaciones más vistas, solo al dueño o a un administrador. El emprendedor las ve en
+`/mi-emprendimiento/estadisticas` (web, con descarga de un reporte CSV) y en la pestaña Vender de
+la app móvil (con «Compartir reporte»).
 
 **Dominio institucional.** Solo se registran correos `@unjbg.edu.pe`; lo exige el disparador
 `handle_new_user` (no solo el formulario). Si cambias `DOMINIO_INSTITUCIONAL`

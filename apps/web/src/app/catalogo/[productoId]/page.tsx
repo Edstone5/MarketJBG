@@ -1,8 +1,10 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { MessageCircle, ShieldCheck } from 'lucide-react';
+import { ShieldCheck } from 'lucide-react';
+import { BotonWhatsApp } from '@/components/BotonWhatsApp';
 import { Navbar } from '@/components/Navbar';
+import { RegistrarVisita } from '@/components/RegistrarVisita';
 import { createClient } from '@/lib/supabase/server';
 import { obtenerProductoPorId } from '@emprende/db';
 
@@ -41,6 +43,9 @@ export default async function ProductoPage({ params }: PageProps<'/catalogo/[pro
   return (
     <>
       <Navbar />
+      {emprendimiento && (
+        <RegistrarVisita tipo="producto" emprendimientoId={emprendimiento.id} productoId={producto.id} />
+      )}
       <main className="mx-auto grid w-full max-w-5xl flex-1 grid-cols-1 gap-8 px-4 py-8 md:grid-cols-2">
         <div className="relative aspect-square overflow-hidden rounded-2xl bg-neutral-100 shadow-sm">
           {producto.imagenes[0] ? (
@@ -86,16 +91,15 @@ export default async function ProductoPage({ params }: PageProps<'/catalogo/[pro
             </Link>
           )}
 
-          {linkWhatsapp && (
-            <a
+          {linkWhatsapp && emprendimiento && (
+            <BotonWhatsApp
               href={linkWhatsapp}
-              target="_blank"
-              rel="noreferrer"
+              emprendimientoId={emprendimiento.id}
+              productoId={producto.id}
               className="mt-2 flex items-center justify-center gap-2 rounded-full bg-green-600 px-5 py-3 font-semibold text-white hover:bg-green-700"
             >
-              <MessageCircle className="h-5 w-5" aria-hidden />
               Contactar por WhatsApp
-            </a>
+            </BotonWhatsApp>
           )}
         </div>
       </main>

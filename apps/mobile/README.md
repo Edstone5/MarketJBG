@@ -23,9 +23,14 @@ pnpm dev:mobile
 - ✅ Eliminar cuenta (pestaña Perfil) y enlaces a Política de Privacidad / Términos
 - ✅ Publicación de productos o servicios con fotos desde el celular (`expo-image-picker`)
 - ✅ Pantalla de suscripción / reporte de pago Yape, con historial de pagos
+- ✅ Editar, ocultar/mostrar y eliminar publicaciones, y editar el perfil comercial
+- ✅ Eliminar cuenta pidiendo la contraseña (la comprueba el servidor de la web)
+- ✅ Estadísticas del negocio (visitas, hora pico, publicaciones más vistas) y «Compartir reporte»;
+  la app cuenta las visitas a las publicaciones y los clics en WhatsApp
+- 🚧 Panel de administración (hoy los pagos se validan solo en la web) y página pública de un
+  emprendimiento
 - 🚧 Notificaciones push (validación de pago, nuevo mensaje)
-- 🚧 Editar o desactivar una publicación existente (hoy solo se puede crear, tampoco existe
-  en la web; mientras tanto se pide por correo, ver la Política de Privacidad)
+- 🚧 Todavía no se ha probado en un teléfono ni en un emulador: solo se comprueba que empaqueta
 
 > Empaquetado: `apps/mobile/metro.config.js` usa la configuración por defecto de Expo. No
 > desactives `resolver.disableHierarchicalLookup` ni fijes `nodeModulesPaths`: con el

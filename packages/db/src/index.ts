@@ -6,6 +6,7 @@ export type {
   EstadoEmprendimiento,
   EstadoPago,
   TipoProducto,
+  TipoVisita,
 } from './types/database.types';
 // Reexportado por conveniencia: las queries de este paquete usan estos tipos
 // de @emprende/core, así que las apps no necesitan importar de ambos paquetes.

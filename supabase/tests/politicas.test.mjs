@@ -124,18 +124,18 @@ describe('emprendimientos: el estado y la vigencia no los controla el dueño', (
     const emp = await como('authenticated', id, (d) =>
       uno(
         d,
-        `insert into emprendimientos (usuario_id, nombre, descripcion, categoria_slug, whatsapp, estado, vistas, activo_hasta)
-         values ($1, 'Negocio', 'Descripción de prueba', 'comida', '+51900000002', 'activo', 999, now() + interval '5 years')
-         returning estado, vistas, activo_hasta`,
+        `insert into emprendimientos (usuario_id, nombre, descripcion, categoria_slug, whatsapp, estado, activo_hasta)
+         values ($1, 'Negocio', 'Descripción de prueba', 'comida', '+51900000002', 'activo', now() + interval '5 years')
+         returning estado, activo_hasta`,
         [id],
       ),
     );
-    assert.deepEqual({ ...emp }, { estado: 'pendiente', vistas: 0, activo_hasta: null });
+    assert.deepEqual({ ...emp }, { estado: 'pendiente', activo_hasta: null });
   });
 
-  test('no puede activarse, ni darse vigencia, ni inflar las vistas', async () => {
+  test('no puede activarse ni darse vigencia', async () => {
     const v = await crearVendedor();
-    for (const set of [`estado = 'activo'`, `activo_hasta = now() + interval '1 year'`, 'vistas = 999999']) {
+    for (const set of [`estado = 'activo'`, `activo_hasta = now() + interval '1 year'`]) {
       await assert.rejects(
         como('authenticated', v.id, (d) => d.query(`update emprendimientos set ${set} where id = $1`, [v.empId])),
         /Solo un administrador/,
@@ -599,5 +599,300 @@ describe('storage', () => {
       assert.ok(b.allowed_mime_types.every((t) => t.startsWith('image/')), b.id);
       assert.ok(!b.allowed_mime_types.includes('image/svg+xml'), b.id);
     }
+  });
+});
+
+// ---------------------------------------------------------------------------------------------
+// RF09: visitas y estadísticas (migración 0006)
+// ---------------------------------------------------------------------------------------------
+const visitante = (n) => `visitante-${n}-abcdef`; // la base exige entre 8 y 64 caracteres
+
+/** Negocio activo y vigente con un producto publicado. */
+async function negocioActivoConProducto(admin, nombreProducto = 'Producto de prueba') {
+  const v = await crearVendedor();
+  await activar(v, admin);
+  const producto = await publicarProducto(v, nombreProducto);
+  return { ...v, productoId: producto.id };
+}
+
+/** Llama a registrar_visita como el rol indicado y devuelve si la visita se contó. */
+async function visitar(rol, uid, { empId, tipo, productoId = null, visitanteId = null }) {
+  const fila = await como(rol, uid, (d) =>
+    uno(d, 'select registrar_visita($1, $2, $3, $4) as contada', [empId, tipo, productoId, visitanteId]),
+  );
+  return fila.contada;
+}
+
+const contarVisitas = async (empId) =>
+  Number((await uno(db, 'select count(*)::int as n from visitas where emprendimiento_id = $1', [empId])).n);
+
+/** Inserta una visita con fecha fija (como lo haría el service role o el SQL Editor). */
+async function insertarVisita(empId, tipo, productoId, cuando = 'now()') {
+  await db.query(
+    `insert into visitas (emprendimiento_id, producto_id, tipo, visitado_en) values ($1, $2, $3, ${cuando})`,
+    [empId, productoId, tipo],
+  );
+}
+
+/** Un instante de «ayer» a la hora de Lima indicada (p. ej. '13 hours 30 minutes' = 13:30). */
+const ayerEnLima = (hora) =>
+  `((date_trunc('day', now() at time zone 'America/Lima') - interval '1 day') + interval '${hora}') at time zone 'America/Lima'`;
+
+/** Un instante de «hoy» a la hora de Lima indicada (puede quedar en el futuro: solo cuenta la fecha). */
+const hoyEnLima = (hora) =>
+  `(date_trunc('day', now() at time zone 'America/Lima') + interval '${hora}') at time zone 'America/Lima'`;
+
+async function estadisticas(rol, uid, empId, dias) {
+  const fila = await como(rol, uid, (d) =>
+    uno(d, 'select estadisticas_emprendimiento($1, $2) as e', dias === undefined ? [empId, 30] : [empId, dias]),
+  );
+  return fila.e;
+}
+
+describe('visitas: solo se registran con registrar_visita() y solo lo que el público ve', () => {
+  let admin;
+  before(async () => {
+    admin = await crearUsuario(correo('admin'), { admin: true });
+  });
+
+  test('cuenta las visitas de cualquiera, también sin cuenta: perfil, producto y contacto', async () => {
+    const n = await negocioActivoConProducto(admin);
+    assert.equal(await visitar('anon', null, { empId: n.empId, tipo: 'perfil' }), true);
+    assert.equal(await visitar('anon', null, { empId: n.empId, tipo: 'producto', productoId: n.productoId }), true);
+    const consumidor = await crearUsuario(correo('comprador'));
+    assert.equal(
+      await visitar('authenticated', consumidor, { empId: n.empId, tipo: 'contacto', productoId: n.productoId }),
+      true,
+    );
+    assert.equal(await contarVisitas(n.empId), 3);
+  });
+
+  test('no cuenta negocios que el público no ve: pendiente, vencido ni suspendido', async () => {
+    const pendiente = await crearVendedor();
+    assert.equal(await visitar('anon', null, { empId: pendiente.empId, tipo: 'perfil' }), false);
+
+    const vencido = await negocioActivoConProducto(admin);
+    await db.query(`update emprendimientos set activo_hasta = now() - interval '1 day' where id = $1`, [vencido.empId]);
+    assert.equal(await visitar('anon', null, { empId: vencido.empId, tipo: 'perfil' }), false);
+
+    const suspendido = await negocioActivoConProducto(admin);
+    await db.query(`update emprendimientos set estado = 'suspendido' where id = $1`, [suspendido.empId]);
+    assert.equal(await visitar('anon', null, { empId: suspendido.empId, tipo: 'perfil' }), false);
+
+    for (const n of [pendiente, vencido, suspendido]) assert.equal(await contarVisitas(n.empId), 0);
+  });
+
+  test('un negocio que no existe no es un error: simplemente no cuenta', async () => {
+    const inexistente = '00000000-0000-4000-8000-000000000999';
+    assert.equal(await visitar('anon', null, { empId: inexistente, tipo: 'perfil' }), false);
+  });
+
+  test('las visitas del propio dueño a su negocio no cuentan', async () => {
+    const n = await negocioActivoConProducto(admin);
+    assert.equal(await visitar('authenticated', n.id, { empId: n.empId, tipo: 'perfil' }), false);
+    assert.equal(
+      await visitar('authenticated', n.id, { empId: n.empId, tipo: 'producto', productoId: n.productoId }),
+      false,
+    );
+    assert.equal(await contarVisitas(n.empId), 0);
+  });
+
+  test('un producto ajeno, oculto o inexistente no cuenta; un tipo inválido o sin producto da error', async () => {
+    const a = await negocioActivoConProducto(admin, 'Producto de A');
+    const b = await negocioActivoConProducto(admin, 'Producto de B');
+    // el producto de B no se puede atribuir al negocio A
+    assert.equal(await visitar('anon', null, { empId: a.empId, tipo: 'producto', productoId: b.productoId }), false);
+    // producto inexistente
+    assert.equal(
+      await visitar('anon', null, { empId: a.empId, tipo: 'producto', productoId: '00000000-0000-4000-8000-000000000998' }),
+      false,
+    );
+    // producto oculto
+    await db.query('update productos set disponible = false where id = $1', [a.productoId]);
+    assert.equal(await visitar('anon', null, { empId: a.empId, tipo: 'producto', productoId: a.productoId }), false);
+    assert.equal(await contarVisitas(a.empId), 0);
+
+    await assert.rejects(visitar('anon', null, { empId: a.empId, tipo: 'compra' }), /Tipo de visita no válido/);
+    await assert.rejects(visitar('anon', null, { empId: a.empId, tipo: 'producto' }), /debe indicar el producto/);
+  });
+
+  test('el mismo visitante no suma dos veces seguidas; otro visitante, otro producto o pasados 30 minutos sí', async () => {
+    const n = await negocioActivoConProducto(admin);
+    const base = { empId: n.empId, tipo: 'producto', productoId: n.productoId };
+    assert.equal(await visitar('anon', null, { ...base, visitanteId: visitante(1) }), true);
+    assert.equal(await visitar('anon', null, { ...base, visitanteId: visitante(1) }), false, 'repetida');
+    assert.equal(await visitar('anon', null, { ...base, visitanteId: visitante(2) }), true, 'otro visitante');
+    assert.equal(
+      await visitar('anon', null, { empId: n.empId, tipo: 'perfil', visitanteId: visitante(1) }),
+      true,
+      'otro tipo de visita',
+    );
+    // pasados 30 minutos vuelve a contar
+    await db.query(`update visitas set visitado_en = now() - interval '31 minutes' where visitante = $1`, [visitante(1)]);
+    assert.equal(await visitar('anon', null, { ...base, visitanteId: visitante(1) }), true, 'pasados 31 minutos');
+  });
+
+  test('sin identificador de visitante (o con uno demasiado corto) siempre cuenta', async () => {
+    const n = await negocioActivoConProducto(admin);
+    assert.equal(await visitar('anon', null, { empId: n.empId, tipo: 'perfil' }), true);
+    assert.equal(await visitar('anon', null, { empId: n.empId, tipo: 'perfil' }), true);
+    assert.equal(await visitar('anon', null, { empId: n.empId, tipo: 'perfil', visitanteId: 'corto' }), true);
+    assert.equal(await contarVisitas(n.empId), 3);
+    const guardados = await filas(db, 'select visitante from visitas where emprendimiento_id = $1', [n.empId]);
+    assert.ok(guardados.every((f) => f.visitante === null));
+  });
+
+  test('nadie escribe, edita ni borra visitas directamente desde la API', async () => {
+    const n = await negocioActivoConProducto(admin);
+    await visitar('anon', null, { empId: n.empId, tipo: 'perfil' });
+    const otro = await crearUsuario(correo('curioso'));
+    for (const [rol, uid] of [['anon', null], ['authenticated', otro], ['authenticated', n.id], ['authenticated', admin]]) {
+      await assert.rejects(
+        como(rol, uid, (d) => d.query(`insert into visitas (emprendimiento_id, tipo) values ($1, 'perfil')`, [n.empId])),
+        /permission denied/,
+        `insertar como ${rol}`,
+      );
+      await assert.rejects(
+        como(rol, uid, (d) => d.query(`update visitas set tipo = 'contacto' where emprendimiento_id = $1`, [n.empId])),
+        /permission denied/,
+        `editar como ${rol}`,
+      );
+      await assert.rejects(
+        como(rol, uid, (d) => d.query('delete from visitas where emprendimiento_id = $1', [n.empId])),
+        /permission denied/,
+        `borrar como ${rol}`,
+      );
+    }
+    assert.equal(await contarVisitas(n.empId), 1);
+  });
+
+  test('solo el dueño y el administrador leen las visitas', async () => {
+    const n = await negocioActivoConProducto(admin);
+    const otro = await negocioActivoConProducto(admin);
+    await visitar('anon', null, { empId: n.empId, tipo: 'perfil' });
+    await visitar('anon', null, { empId: otro.empId, tipo: 'perfil' });
+
+    const leer = (rol, uid) => como(rol, uid, (d) => filas(d, 'select emprendimiento_id from visitas'));
+    const propias = await leer('authenticated', n.id);
+    assert.ok(propias.length >= 1 && propias.every((f) => f.emprendimiento_id === n.empId), 'el dueño solo ve las suyas');
+    const comoAdmin = await leer('authenticated', admin);
+    const ids = new Set(comoAdmin.map((f) => f.emprendimiento_id));
+    assert.ok(ids.has(n.empId) && ids.has(otro.empId), 'el administrador ve las de todos');
+    const curioso = await crearUsuario(correo('curioso'));
+    assert.deepEqual(await leer('authenticated', curioso), [], 'otra persona no ve nada');
+    await assert.rejects(leer('anon', null), /permission denied/);
+  });
+
+  test('las visitas se borran con el emprendimiento, pero no al borrar un producto', async () => {
+    const n = await negocioActivoConProducto(admin);
+    await visitar('anon', null, { empId: n.empId, tipo: 'producto', productoId: n.productoId });
+    await db.query('delete from productos where id = $1', [n.productoId]);
+    assert.equal(await contarVisitas(n.empId), 1, 'el historial se conserva');
+    const fila = await uno(db, 'select producto_id from visitas where emprendimiento_id = $1', [n.empId]);
+    assert.equal(fila.producto_id, null);
+    await como('authenticated', admin, (d) => d.query('delete from emprendimientos where id = $1', [n.empId]));
+    assert.equal(await contarVisitas(n.empId), 0);
+  });
+});
+
+describe('estadisticas_emprendimiento: totales, días, horas pico y productos más vistos', () => {
+  let admin;
+  before(async () => {
+    admin = await crearUsuario(correo('admin'), { admin: true });
+  });
+
+  test('sin visitas: todo en cero, 30 días y 24 horas de relleno, sin hora pico', async () => {
+    const n = await negocioActivoConProducto(admin);
+    const e = await estadisticas('authenticated', n.id, n.empId);
+    assert.equal(e.dias, 30);
+    assert.equal(e.visitas_perfil + e.visitas_productos + e.contactos, 0);
+    assert.equal(e.por_dia.length, 30);
+    assert.equal(e.por_hora.length, 24);
+    assert.equal(e.hora_pico, null);
+    assert.deepEqual(e.productos, []);
+    const hoy = (await uno(db, `select (now() at time zone 'America/Lima')::date::text as hoy`)).hoy;
+    assert.equal(e.hasta, hoy);
+    assert.equal(e.por_dia.at(-1).dia, hoy);
+    assert.ok(e.por_dia.every((d) => d.visitas === 0 && d.contactos === 0));
+  });
+
+  test('cuenta por tipo, por día y por hora de Lima, y arma el ranking de productos', async () => {
+    const n = await negocioActivoConProducto(admin, 'Brownies');
+    const segundo = await publicarProducto(n, 'Galletas');
+    // ayer a las 13:xx (Lima): 3 visitas; a las 09:xx: 1 visita; hoy: 1 visita al perfil; 2 contactos
+    for (const hora of ['13 hours 5 minutes', '13 hours 30 minutes', '13 hours 55 minutes']) {
+      await insertarVisita(n.empId, 'producto', n.productoId, ayerEnLima(hora));
+    }
+    await insertarVisita(n.empId, 'producto', segundo.id, ayerEnLima('9 hours 10 minutes'));
+    await insertarVisita(n.empId, 'perfil', null, hoyEnLima('2 hours'));
+    await insertarVisita(n.empId, 'contacto', n.productoId, ayerEnLima('13 hours 40 minutes'));
+    await insertarVisita(n.empId, 'contacto', segundo.id, hoyEnLima('2 hours 30 minutes'));
+
+    const e = await estadisticas('authenticated', n.id, n.empId);
+    assert.equal(e.visitas_perfil, 1);
+    assert.equal(e.visitas_productos, 4);
+    assert.equal(e.contactos, 2);
+    assert.equal(e.hora_pico, 13, 'la hora pico es en hora de Lima, no en UTC');
+    assert.equal(e.por_hora.find((h) => h.hora === 13).visitas, 3);
+    assert.equal(e.por_hora.find((h) => h.hora === 9).visitas, 1);
+    assert.equal(e.por_hora.reduce((suma, h) => suma + h.visitas, 0), 5, 'los contactos no cuentan como visitas');
+
+    const ayer = e.por_dia.at(-2);
+    assert.equal(ayer.visitas, 4);
+    assert.equal(ayer.contactos, 1);
+    assert.equal(e.por_dia.at(-1).visitas, 1);
+    assert.equal(e.por_dia.at(-1).contactos, 1);
+
+    assert.equal(e.productos[0].nombre, 'Brownies');
+    assert.equal(e.productos[0].visitas, 3);
+    assert.equal(e.productos[0].contactos, 1);
+    assert.equal(e.productos[1].nombre, 'Galletas');
+    assert.equal(e.productos[1].visitas, 1);
+  });
+
+  test('en un empate de horas gana la más temprana', async () => {
+    const n = await negocioActivoConProducto(admin);
+    await insertarVisita(n.empId, 'perfil', null, ayerEnLima('15 hours'));
+    await insertarVisita(n.empId, 'perfil', null, ayerEnLima('11 hours'));
+    const e = await estadisticas('authenticated', n.id, n.empId);
+    assert.equal(e.hora_pico, 11);
+  });
+
+  test('el periodo se respeta: lo anterior queda fuera y entra al ampliarlo', async () => {
+    const n = await negocioActivoConProducto(admin);
+    await insertarVisita(n.empId, 'perfil', null, `now() - interval '40 days'`);
+    await insertarVisita(n.empId, 'perfil', null, `now() - interval '3 days'`);
+    assert.equal((await estadisticas('authenticated', n.id, n.empId, 30)).visitas_perfil, 1);
+    assert.equal((await estadisticas('authenticated', n.id, n.empId, 2)).visitas_perfil, 0);
+    assert.equal((await estadisticas('authenticated', n.id, n.empId, 90)).visitas_perfil, 2);
+  });
+
+  test('el periodo se limita entre 1 y 365 días', async () => {
+    const n = await negocioActivoConProducto(admin);
+    assert.equal((await estadisticas('authenticated', n.id, n.empId, 0)).por_dia.length, 1);
+    assert.equal((await estadisticas('authenticated', n.id, n.empId, -5)).por_dia.length, 1);
+    assert.equal((await estadisticas('authenticated', n.id, n.empId, 99999)).por_dia.length, 365);
+  });
+
+  test('una visita se sigue contando en las estadísticas aunque el producto se borre', async () => {
+    const n = await negocioActivoConProducto(admin, 'Temporal');
+    await visitar('anon', null, { empId: n.empId, tipo: 'producto', productoId: n.productoId });
+    await db.query('delete from productos where id = $1', [n.productoId]);
+    const e = await estadisticas('authenticated', n.id, n.empId);
+    assert.equal(e.visitas_productos, 1);
+    assert.deepEqual(e.productos, [], 'ya no aparece en el ranking');
+  });
+
+  test('solo el dueño y el administrador consultan; los demás reciben un error', async () => {
+    const n = await negocioActivoConProducto(admin);
+    await visitar('anon', null, { empId: n.empId, tipo: 'perfil' });
+    assert.equal((await estadisticas('authenticated', n.id, n.empId)).visitas_perfil, 1);
+    assert.equal((await estadisticas('authenticated', admin, n.empId)).visitas_perfil, 1);
+
+    const curioso = await crearUsuario(correo('curioso'));
+    await assert.rejects(estadisticas('authenticated', curioso, n.empId), /No tienes acceso/);
+    await assert.rejects(estadisticas('anon', null, n.empId), /permission denied/);
+    const inexistente = '00000000-0000-4000-8000-000000000997';
+    await assert.rejects(estadisticas('authenticated', admin, inexistente), /No tienes acceso/);
   });
 });
