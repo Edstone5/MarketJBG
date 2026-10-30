@@ -56,6 +56,19 @@ describe('mensajes de validación en español', () => {
     assert.equal(mensaje(s.safeParse({ ...base, categoriaSlug: 'otra' })), 'Categoría: no es una opción válida.');
   });
 
+  test('perfil comercial: el WhatsApp admite espacios y guiones, y se guarda solo el número', () => {
+    const { crearEmprendimientoSchema: s } = core;
+    const base = { nombre: 'Dulces Tacna', descripcion: 'Postres hechos a mano', categoriaSlug: 'postres' };
+    for (const escrito of ['+51 987 654 321', '+51 987-654-321', '(+51) 987654321', ' 987654321 ']) {
+      const resultado = s.safeParse({ ...base, whatsapp: escrito });
+      assert.equal(resultado.success, true, escrito);
+      assert.match(resultado.data.whatsapp, /^\+?\d{9,12}$/, escrito);
+    }
+    assert.equal(s.parse({ ...base, whatsapp: '+51 987 654 321' }).whatsapp, '+51987654321');
+    assert.equal(mensaje(s.safeParse({ ...base, whatsapp: '12345' })), 'Número de WhatsApp inválido');
+    assert.equal(mensaje(s.safeParse({ ...base, whatsapp: 'no es un número' })), 'Número de WhatsApp inválido');
+  });
+
   test('registro e inicio de sesión conservan sus mensajes propios', () => {
     const base = { email: 'ana@unjbg.edu.pe', password: '12345678', nombreCompleto: 'Ana Perez' };
     assert.equal(mensaje(core.registroSchema.safeParse(base)), 'ok');

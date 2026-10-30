@@ -34,7 +34,7 @@ export async function Navbar() {
   const { conSesion, esAdmin } = await leerSesion();
 
   return (
-    <header className="sticky top-0 z-40 border-b border-neutral-100 bg-white/95 backdrop-blur">
+    <header className="sticky top-0 z-40 border-b border-primary-200/70 bg-[#eee9fc]/95 shadow-sm backdrop-blur">
       <div className="h-1 w-full bg-gradient-to-r from-primary-600 to-accent-500" />
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
         <Link href="/" className="flex shrink-0 items-center gap-2 font-bold text-primary-700">
@@ -64,7 +64,7 @@ export async function Navbar() {
         <div className="flex items-center gap-2">
           <Link
             href={conSesion ? '/mi-cuenta' : '/login'}
-            className="flex items-center gap-1.5 rounded-full border border-neutral-200 px-3 py-2 text-sm font-medium text-neutral-700 hover:border-primary-400 hover:text-primary-700 sm:px-4"
+            className="flex items-center gap-1.5 rounded-full border border-primary-200 bg-white px-3 py-2 text-sm font-medium text-neutral-700 hover:border-primary-400 hover:text-primary-700 sm:px-4"
           >
             <User className="h-4 w-4" aria-hidden />
             {conSesion ? 'Mi cuenta' : 'Ingresar'}
@@ -74,7 +74,7 @@ export async function Navbar() {
           <details className="relative md:hidden">
             <summary
               aria-label="Abrir menú"
-              className="flex h-10 w-10 cursor-pointer list-none items-center justify-center rounded-full border border-neutral-200 text-neutral-700 hover:border-primary-400 [&::-webkit-details-marker]:hidden"
+              className="flex h-10 w-10 cursor-pointer list-none items-center justify-center rounded-full border border-primary-200 bg-white text-neutral-700 hover:border-primary-400 [&::-webkit-details-marker]:hidden"
             >
               <Menu className="h-5 w-5" aria-hidden />
             </summary>

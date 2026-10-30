@@ -8,6 +8,7 @@ export function EliminarCuentaBoton() {
   const router = useRouter();
   const [confirmando, setConfirmando] = useState(false);
   const [eliminando, setEliminando] = useState(false);
+  const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   async function eliminar() {
@@ -23,7 +24,8 @@ export function EliminarCuentaBoton() {
 
       const respuesta = await fetch('/api/cuenta', {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${session.access_token}` },
+        headers: { Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
       });
 
       if (!respuesta.ok) {
@@ -37,6 +39,7 @@ export function EliminarCuentaBoton() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo eliminar la cuenta.');
       setEliminando(false);
+      setPassword('');
     }
   }
 
@@ -44,7 +47,10 @@ export function EliminarCuentaBoton() {
     return (
       <button
         type="button"
-        onClick={() => setConfirmando(true)}
+        onClick={() => {
+          setConfirmando(true);
+          setError(null);
+        }}
         className="rounded-full border border-red-300 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-50"
       >
         Eliminar mi cuenta
@@ -53,30 +59,59 @@ export function EliminarCuentaBoton() {
   }
 
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-red-200 bg-red-50 p-4">
+    <form
+      onSubmit={(evento) => {
+        evento.preventDefault();
+        void eliminar();
+      }}
+      className="flex flex-col gap-3 rounded-lg border border-red-200 bg-red-50 p-4"
+    >
       <p className="text-sm text-red-800">
         Esto eliminará tu cuenta, tu perfil de emprendimiento, tus productos y tu historial de
-        pagos de forma permanente. Esta acción no se puede deshacer. ¿Confirmas?
+        pagos de forma permanente. Esta acción no se puede deshacer. Para confirmar, escribe tu
+        contraseña.
       </p>
-      {error && <p className="text-sm font-medium text-red-700">{error}</p>}
+      <div className="flex flex-col gap-1">
+        <label htmlFor="confirmar-contrasena" className="text-sm font-medium text-red-900">
+          Contraseña
+        </label>
+        <input
+          id="confirmar-contrasena"
+          type="password"
+          autoComplete="current-password"
+          value={password}
+          onChange={(evento) => setPassword(evento.target.value)}
+          disabled={eliminando}
+          required
+          className="rounded-lg border border-red-300 bg-white px-3 py-2 text-sm outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100"
+        />
+      </div>
+      {error && (
+        <p role="alert" className="text-sm font-medium text-red-700">
+          {error}
+        </p>
+      )}
       <div className="flex gap-2">
         <button
-          type="button"
-          onClick={eliminar}
-          disabled={eliminando}
+          type="submit"
+          disabled={eliminando || password.length === 0}
           className="rounded-full bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60"
         >
           {eliminando ? 'Eliminando…' : 'Sí, eliminar definitivamente'}
         </button>
         <button
           type="button"
-          onClick={() => setConfirmando(false)}
+          onClick={() => {
+            setConfirmando(false);
+            setPassword('');
+            setError(null);
+          }}
           disabled={eliminando}
           className="rounded-full border border-neutral-300 px-4 py-2 text-sm font-medium hover:bg-white"
         >
           Cancelar
         </button>
       </div>
-    </div>
+    </form>
   );
 }

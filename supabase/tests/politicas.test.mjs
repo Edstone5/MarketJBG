@@ -171,6 +171,56 @@ describe('emprendimientos: el estado y la vigencia no los controla el dueño', (
   });
 });
 
+describe('emprendimientos: el dueño edita su perfil comercial', () => {
+  test('cambia nombre, descripción, categoría y WhatsApp de una vez, y el negocio sigue activo con su vigencia', async () => {
+    const admin = await crearUsuario(correo('admin'), { admin: true });
+    const v = await crearVendedor();
+    await activar(v, admin);
+    const antes = await uno(db, 'select estado, activo_hasta from emprendimientos where id = $1', [v.empId]);
+
+    const filasCambiadas = await como('authenticated', v.id, (d) =>
+      filas(
+        d,
+        `update emprendimientos
+            set nombre = 'Dulces Tacna', descripcion = 'Postres hechos a mano en el campus',
+                categoria_slug = 'postres', whatsapp = '+51987654321'
+          where id = $1 returning id`,
+        [v.empId],
+      ),
+    );
+    assert.equal(filasCambiadas.length, 1);
+
+    const despues = await uno(db, 'select * from emprendimientos where id = $1', [v.empId]);
+    assert.equal(despues.nombre, 'Dulces Tacna');
+    assert.equal(despues.descripcion, 'Postres hechos a mano en el campus');
+    assert.equal(despues.categoria_slug, 'postres');
+    assert.equal(despues.whatsapp, '+51987654321');
+    assert.equal(despues.estado, antes.estado);
+    assert.equal(despues.estado, 'activo');
+    assert.equal(String(despues.activo_hasta), String(antes.activo_hasta));
+  });
+
+  test('no puede cambiar el perfil de otra persona: la base de datos no actualiza ninguna fila', async () => {
+    const duenio = await crearVendedor();
+    const intruso = await crearVendedor('intruso');
+    const filasCambiadas = await como('authenticated', intruso.id, (d) =>
+      filas(d, `update emprendimientos set nombre = 'Hackeado' where id = $1 returning id`, [duenio.empId]),
+    );
+    assert.equal(filasCambiadas.length, 0);
+    assert.equal((await uno(db, 'select nombre from emprendimientos where id = $1', [duenio.empId])).nombre, 'Mi negocio');
+  });
+
+  test('una categoría que no existe se rechaza', async () => {
+    const v = await crearVendedor();
+    await assert.rejects(
+      como('authenticated', v.id, (d) =>
+        d.query(`update emprendimientos set categoria_slug = 'no-existe' where id = $1`, [v.empId]),
+      ),
+      /categoria_slug|foreign key|viola/i,
+    );
+  });
+});
+
 describe('pagos: dos estados (pendiente / validado)', () => {
   test('la restricción de la tabla solo admite pendiente y validado', async () => {
     const v = await crearVendedor();

@@ -31,6 +31,33 @@ export async function crearEmprendimiento(
   return data;
 }
 
+const SIN_PERMISO_NEGOCIO = 'No se encontró el emprendimiento o no tienes permiso para cambiarlo.';
+
+/**
+ * Cambia el nombre, la descripción, la categoría o el WhatsApp del perfil comercial (solo su dueño; lo exige la base de
+ * datos). El estado y la vigencia de la suscripción no se tocan aquí: solo los cambia un administrador.
+ */
+export async function actualizarEmprendimiento(
+  supabase: TypedSupabaseClient,
+  emprendimientoId: string,
+  input: CrearEmprendimientoInput,
+) {
+  const { data, error } = await supabase
+    .from('emprendimientos')
+    .update({
+      nombre: input.nombre,
+      descripcion: input.descripcion,
+      categoria_slug: input.categoriaSlug,
+      whatsapp: input.whatsapp,
+    })
+    .eq('id', emprendimientoId)
+    .select()
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) throw new ErrorDeUsuario(SIN_PERMISO_NEGOCIO);
+  return data;
+}
+
 export async function crearProducto(
   supabase: TypedSupabaseClient,
   emprendimientoId: string,

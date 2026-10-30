@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { mensajeError } from '@emprende/core';
-import { Alert, Linking, SafeAreaView, ScrollView, Text, View } from 'react-native';
+import { Alert, Linking, SafeAreaView, ScrollView, Text, TextInput, View } from 'react-native';
 import { router } from 'expo-router';
 import { useAuth } from '@/providers/AuthProvider';
 import { supabase } from '@/lib/supabase';
@@ -12,6 +12,8 @@ const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL ?? (__DEV__ ? 'http://localhost:
 export default function PerfilScreen() {
   const { user, session, cargando } = useAuth();
   const [eliminando, setEliminando] = useState(false);
+  const [confirmando, setConfirmando] = useState(false);
+  const [password, setPassword] = useState('');
 
   if (cargando) return null;
 
@@ -34,19 +36,12 @@ export default function PerfilScreen() {
     );
   }
 
-  async function confirmarEliminarCuenta() {
-    Alert.alert(
-      'Eliminar cuenta',
-      'Esto eliminará tu cuenta, tu emprendimiento, tus productos y tu historial de pagos de forma permanente. Esta acción no se puede deshacer.',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        { text: 'Eliminar definitivamente', style: 'destructive', onPress: eliminarCuenta },
-      ],
-    );
-  }
-
   async function eliminarCuenta() {
     if (!session) return;
+    if (!password) {
+      Alert.alert('Falta la contraseña', 'Escribe tu contraseña para confirmar.');
+      return;
+    }
     if (!WEB_URL) {
       Alert.alert(
         'No disponible',
@@ -58,11 +53,13 @@ export default function PerfilScreen() {
     try {
       const respuesta = await fetch(`${WEB_URL}/api/cuenta`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${session.access_token}` },
+        headers: { Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
       });
       if (!respuesta.ok) {
         const cuerpo = await respuesta.json().catch(() => ({ error: null }));
         Alert.alert('No se pudo eliminar', cuerpo?.error ?? 'Inténtalo de nuevo.');
+        setPassword('');
         return;
       }
       await supabase.auth.signOut();
@@ -89,12 +86,41 @@ export default function PerfilScreen() {
           <Text className="text-sm text-neutral-600">
             Elimina tu cuenta y todos tus datos de forma permanente.
           </Text>
-          <Button
-            texto={eliminando ? 'Eliminando…' : 'Eliminar mi cuenta'}
-            variante="peligro"
-            onPress={confirmarEliminarCuenta}
-            disabled={eliminando}
-          />
+          {!confirmando ? (
+            <Button texto="Eliminar mi cuenta" variante="peligro" onPress={() => setConfirmando(true)} />
+          ) : (
+            <View className="gap-3">
+              <Text className="text-sm text-red-800">
+                Esto eliminará tu cuenta, tu emprendimiento, tus productos y tu historial de pagos de forma
+                permanente. Esta acción no se puede deshacer. Para confirmar, escribe tu contraseña.
+              </Text>
+              <TextInput
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+                autoCapitalize="none"
+                autoCorrect={false}
+                placeholder="Contraseña"
+                editable={!eliminando}
+                className="rounded-lg border border-red-300 bg-white px-3 py-2.5 text-sm text-neutral-900"
+              />
+              <Button
+                texto={eliminando ? 'Eliminando…' : 'Sí, eliminar definitivamente'}
+                variante="peligro"
+                onPress={eliminarCuenta}
+                disabled={eliminando || password.length === 0}
+              />
+              <Button
+                texto="Cancelar"
+                variante="secundario"
+                onPress={() => {
+                  setConfirmando(false);
+                  setPassword('');
+                }}
+                disabled={eliminando}
+              />
+            </View>
+          )}
         </View>
 
         <EnlacesLegales />

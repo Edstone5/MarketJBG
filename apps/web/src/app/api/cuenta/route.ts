@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { createSupabaseClient } from '@emprende/db';
 import { createAdminClient } from '@/lib/supabase/admin';
 
 export const dynamic = 'force-dynamic';
@@ -32,6 +33,10 @@ async function vaciarCarpeta(admin: ClienteAdmin, bucket: string, carpeta: strin
  * Requiere el access token de la sesión en el header
  * `Authorization: Bearer <token>` — nunca confiamos en un userId que venga
  * del cliente, siempre lo resolvemos verificando el token contra Supabase.
+ *
+ * Además exige reconfirmar la contraseña (`{ "password": "…" }` en el cuerpo):
+ * un token robado o una sesión que alguien dejó abierta no bastan para borrar
+ * la cuenta. La contraseña se comprueba aquí, en el servidor.
  */
 export async function DELETE(request: Request) {
   const authHeader = request.headers.get('authorization');
@@ -50,6 +55,35 @@ export async function DELETE(request: Request) {
 
   if (userError || !user) {
     return NextResponse.json({ error: 'Sesión inválida o expirada.' }, { status: 401 });
+  }
+
+  const cuerpo = (await request.json().catch(() => null)) as { password?: unknown } | null;
+  const password = typeof cuerpo?.password === 'string' ? cuerpo.password : '';
+  if (!password) {
+    return NextResponse.json({ error: 'Escribe tu contraseña para confirmar.' }, { status: 400 });
+  }
+  if (!user.email) {
+    return NextResponse.json({ error: 'Tu cuenta no tiene correo con el que confirmar.' }, { status: 400 });
+  }
+
+  // Cliente aparte, sin guardar la sesión que crea al comprobar la contraseña.
+  const verificador = createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } },
+  );
+  const { error: errorClave } = await verificador.auth.signInWithPassword({ email: user.email, password });
+  if (errorClave) {
+    // 400 = credenciales inválidas; cualquier otro estado (límite de intentos, caída) no es culpa de la contraseña.
+    const esClaveIncorrecta = errorClave.status === 400;
+    return NextResponse.json(
+      {
+        error: esClaveIncorrecta
+          ? 'La contraseña no es correcta.'
+          : 'No se pudo comprobar la contraseña. Inténtalo de nuevo en un momento.',
+      },
+      { status: esClaveIncorrecta ? 403 : 503 },
+    );
   }
 
   // Limpia los archivos del usuario en Storage antes de borrar la cuenta. Si

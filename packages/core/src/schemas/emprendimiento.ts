@@ -9,7 +9,11 @@ export const emprendimientoSchema = z.object({
   descripcion: z.string().min(10).max(600),
   categoriaSlug: z.enum(CATEGORIA_SLUGS),
   logoUrl: z.string().url().nullable().optional(),
-  whatsapp: z.string().regex(/^\+?[0-9]{9,15}$/, 'Número de WhatsApp inválido'),
+  // Se aceptan espacios, guiones y paréntesis al escribirlo («+51 987 654 321»); se guarda solo el número.
+  whatsapp: z.preprocess(
+    (valor) => (typeof valor === 'string' ? valor.replace(/[\s().-]/g, '') : valor),
+    z.string().regex(/^\+?[0-9]{9,15}$/, 'Número de WhatsApp inválido'),
+  ),
   estado: z.enum(ESTADOS_EMPRENDIMIENTO).default('pendiente'),
   vistas: z.number().int().nonnegative().default(0),
   creadoEn: z.string().datetime().optional(),

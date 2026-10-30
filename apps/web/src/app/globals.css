@@ -53,11 +53,12 @@
   --color-accent-700: var(--color-accent-700);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #140f24;
-    --foreground: #ede8fb;
-  }
+/*
+ * La interfaz está diseñada solo en tema claro (ningún componente tiene variantes oscuras): con el sistema en modo
+ * oscuro, un fondo oscuro dejaba los textos casi invisibles. Se fuerza el tema claro hasta que exista un modo oscuro completo.
+ */
+:root {
+  color-scheme: light;
 }
 
 body {

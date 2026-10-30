@@ -1,14 +1,12 @@
 import { useCallback, useState } from 'react';
-import { Alert, Pressable, RefreshControl, SafeAreaView, ScrollView, Text, TextInput, View } from 'react-native';
+import { Alert, Pressable, RefreshControl, SafeAreaView, ScrollView, Text, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import {
-  CATEGORIAS,
-  crearEmprendimientoSchema,
   estadoEfectivo,
   ETIQUETAS_TIPO_PRODUCTO,
   formatearFecha,
   mensajeError,
-  primerError,
+  type CrearEmprendimientoInput,
 } from '@emprende/core';
 import {
   alternarDisponibilidadProducto,
@@ -22,6 +20,7 @@ import { PlusCircle } from 'lucide-react-native';
 import { supabase, supabaseConfigurado } from '@/lib/supabase';
 import { useAuth } from '@/providers/AuthProvider';
 import { Button } from '@/components/Button';
+import { EmprendimientoFormulario } from '@/components/EmprendimientoFormulario';
 
 type Emprendimiento = Database['public']['Tables']['emprendimientos']['Row'] & {
   productos?: Database['public']['Tables']['productos']['Row'][];
@@ -146,6 +145,7 @@ export default function VenderScreen() {
           )}
 
           <View className="flex-row gap-2">
+            <Button texto="Editar perfil" variante="secundario" onPress={() => router.push('/negocio/perfil')} />
             <Button
               texto="Suscripción"
               variante="secundario"
@@ -221,27 +221,12 @@ function FormularioNuevoEmprendimiento({
   usuarioId: string;
   onCreado: (e: Emprendimiento) => void;
 }) {
-  const [nombre, setNombre] = useState('');
-  const [descripcion, setDescripcion] = useState('');
-  const [whatsapp, setWhatsapp] = useState('');
-  const [categoriaSlug, setCategoriaSlug] = useState(CATEGORIAS[0]!.slug);
   const [enviando, setEnviando] = useState(false);
 
-  async function enviar() {
-    const resultado = crearEmprendimientoSchema.safeParse({
-      nombre,
-      descripcion,
-      whatsapp,
-      categoriaSlug,
-    });
-    if (!resultado.success) {
-      Alert.alert('Revisa el formulario', primerError(resultado.error));
-      return;
-    }
-
+  async function enviar(datos: CrearEmprendimientoInput) {
     setEnviando(true);
     try {
-      const nuevo = await crearEmprendimiento(supabase, usuarioId, resultado.data);
+      const nuevo = await crearEmprendimiento(supabase, usuarioId, datos);
       onCreado(nuevo as Emprendimiento);
     } catch (error) {
       Alert.alert('No se pudo crear', mensajeError(error, 'Inténtalo de nuevo.'));
@@ -252,63 +237,12 @@ function FormularioNuevoEmprendimiento({
 
   return (
     <SafeAreaView className="flex-1 bg-neutral-50">
-      <ScrollView contentContainerStyle={{ padding: 16, gap: 16 }}>
-        <Text className="text-2xl font-bold text-neutral-900">Crea tu perfil comercial</Text>
-
-        <Campo label="Nombre del emprendimiento" value={nombre} onChangeText={setNombre} />
-        <Campo
-          label="Descripción"
-          value={descripcion}
-          onChangeText={setDescripcion}
-          multiline
-        />
-        <Campo label="WhatsApp de contacto" value={whatsapp} onChangeText={setWhatsapp} />
-
-        <View className="gap-1">
-          <Text className="text-sm font-medium text-neutral-700">Categoría</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {CATEGORIAS.map((categoria) => (
-              <Text
-                key={categoria.slug}
-                onPress={() => setCategoriaSlug(categoria.slug)}
-                className={`mr-2 rounded-full border px-4 py-1.5 text-sm ${
-                  categoriaSlug === categoria.slug
-                    ? 'border-primary-600 bg-primary-600 text-white'
-                    : 'border-neutral-300 text-neutral-700'
-                }`}
-              >
-                {categoria.nombre}
-              </Text>
-            ))}
-          </ScrollView>
-        </View>
-
-        <Button
-          texto={enviando ? 'Creando…' : 'Crear mi emprendimiento'}
-          onPress={enviar}
-          disabled={enviando}
-        />
-      </ScrollView>
-    </SafeAreaView>
-  );
-}
-
-function Campo(props: {
-  label: string;
-  value: string;
-  onChangeText: (v: string) => void;
-  multiline?: boolean;
-}) {
-  return (
-    <View className="gap-1">
-      <Text className="text-sm font-medium text-neutral-700">{props.label}</Text>
-      <TextInput
-        value={props.value}
-        onChangeText={props.onChangeText}
-        multiline={props.multiline}
-        className="rounded-lg border border-neutral-300 bg-white px-3 py-2.5 text-sm text-neutral-900"
-        style={props.multiline ? { minHeight: 90, textAlignVertical: 'top' } : undefined}
+      <Text className="px-4 pt-4 text-2xl font-bold text-neutral-900">Crea tu perfil comercial</Text>
+      <EmprendimientoFormulario
+        enviando={enviando}
+        onEnviar={enviar}
+        textoBoton={enviando ? 'Creando…' : 'Crear mi emprendimiento'}
       />
-    </View>
+    </SafeAreaView>
   );
 }

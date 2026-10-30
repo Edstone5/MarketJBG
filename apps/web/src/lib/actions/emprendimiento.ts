@@ -11,6 +11,7 @@ import {
   reportarPagoSchema,
 } from '@emprende/core';
 import {
+  actualizarEmprendimiento,
   actualizarProducto,
   alternarDisponibilidadProducto,
   crearEmprendimiento,
@@ -30,6 +31,13 @@ async function usuarioActual() {
   } = await supabase.auth.getUser();
   if (!user) throw new Error('No autenticado');
   return { supabase, user };
+}
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function refrescarListas() {
+  revalidatePath('/mi-emprendimiento');
+  revalidatePath('/catalogo');
 }
 
 export async function crearEmprendimientoAction(
@@ -55,6 +63,34 @@ export async function crearEmprendimientoAction(
 
   revalidatePath('/mi-emprendimiento');
   return {};
+}
+
+export async function editarEmprendimientoAction(
+  emprendimientoId: string,
+  _prev: EstadoFormulario,
+  formData: FormData,
+): Promise<EstadoFormulario> {
+  const resultado = crearEmprendimientoSchema.safeParse({
+    nombre: formData.get('nombre'),
+    descripcion: formData.get('descripcion'),
+    categoriaSlug: formData.get('categoriaSlug'),
+    whatsapp: formData.get('whatsapp'),
+  });
+  if (!resultado.success) {
+    return { error: primerError(resultado.error) };
+  }
+  if (!UUID.test(emprendimientoId)) return { error: 'Emprendimiento no válido.' };
+
+  try {
+    const { supabase } = await usuarioActual();
+    await actualizarEmprendimiento(supabase, emprendimientoId, resultado.data);
+  } catch (error) {
+    return { error: mensajeError(error, 'No se pudieron guardar los cambios.') };
+  }
+
+  refrescarListas();
+  revalidatePath(`/emprendimientos/${emprendimientoId}`);
+  redirect('/mi-emprendimiento');
 }
 
 export async function crearProductoAction(
@@ -88,13 +124,6 @@ export async function crearProductoAction(
   revalidatePath('/mi-emprendimiento');
   // Tras publicar, vuelve a la lista de productos (donde aparece lo recién publicado).
   redirect('/mi-emprendimiento');
-}
-
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-function refrescarListas() {
-  revalidatePath('/mi-emprendimiento');
-  revalidatePath('/catalogo');
 }
 
 export async function editarProductoAction(

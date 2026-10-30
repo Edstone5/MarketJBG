@@ -34,7 +34,7 @@ export default function EliminarCuentaPage() {
               en la web, o a la pestaña <strong>Perfil</strong> en la app móvil.
             </li>
             <li>
-              Pulsa <strong>&quot;Eliminar mi cuenta&quot;</strong> y confirma la acción.
+              Pulsa <strong>&quot;Eliminar mi cuenta&quot;</strong> y confirma la acción escribiendo tu contraseña.
             </li>
           </ol>
           <p className="mt-2 text-sm text-neutral-500">
